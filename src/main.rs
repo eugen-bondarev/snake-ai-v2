@@ -53,7 +53,7 @@ use std::iter;
 
 impl Field {
     fn new() -> Field {
-        Field { cells }
+        Field {}
     }
 }
 
@@ -67,6 +67,10 @@ impl Field {
 // }
 
 fn main() {
+    [0..FIELD_WIDTH]
+        .into_iter()
+        .map(|_| CellState::Empty)
+        .collect();
     // render_field(&vec![Snake::new()]);
     let field = Field::new();
 }
