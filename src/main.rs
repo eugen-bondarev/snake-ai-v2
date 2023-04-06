@@ -1,4 +1,4 @@
-use std::vec;
+use std::{thread::sleep, time::Duration, vec};
 
 use rand::Rng;
 
@@ -23,14 +23,38 @@ impl Cell {
     }
 }
 
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
 struct Snake {
     cells: Vec<Cell>,
+    direction: Direction,
 }
 
 impl Snake {
     fn new() -> Snake {
         Snake {
             cells: vec![Cell::init_random()],
+            direction: Direction::Up,
+        }
+    }
+
+    fn tick(&mut self) {
+        if matches!(self.direction, Direction::Up) {
+            self.cells[0].y -= 1;
+        }
+        if matches!(self.direction, Direction::Down) {
+            self.cells[0].y += 1;
+        }
+        if matches!(self.direction, Direction::Left) {
+            self.cells[0].x -= 1;
+        }
+        if matches!(self.direction, Direction::Right) {
+            self.cells[0].x += 1;
         }
     }
 
@@ -49,40 +73,70 @@ enum CellState {
 }
 
 struct Field {
-    cells: Vec<Vec<i32>>,
-}
-
-fn fill<T>(size: usize, val: T) -> Vec<T>
-where
-    T: Copy,
-{
-    let mut zero_vec: Vec<T> = Vec::with_capacity(size);
-    for i in 0..size {
-        zero_vec.push(val);
-    }
-    zero_vec
+    cell_cols: Vec<Vec<CellState>>,
 }
 
 impl Field {
     fn new() -> Field {
-        let foo = fill(FIELD_HEIGHT.into(), 3);
-        Field {
-            cells: fill(FIELD_WIDTH.into(), foo),
+        let mut cols: Vec<Vec<CellState>> = Vec::with_capacity(FIELD_WIDTH.into());
+        for _ in 0..FIELD_WIDTH {
+            let mut cells: Vec<CellState> = Vec::with_capacity(FIELD_HEIGHT.into());
+            for _ in 0..FIELD_HEIGHT {
+                cells.push(CellState::Empty);
+            }
+            cols.push(cells);
+        }
+        Field { cell_cols: cols }
+    }
+
+    fn clear(&mut self) {
+        for x in 0..FIELD_WIDTH {
+            for y in 0..FIELD_HEIGHT {
+                self.cell_cols[usize::from(x)][usize::from(y)] = CellState::Empty;
+            }
+        }
+    }
+
+    fn render_snakes(&mut self, snakes: &Vec<Snake>) {
+        for snake in snakes {
+            for cell in &snake.cells {
+                self.cell_cols[usize::from(cell.x)][usize::from(cell.y)] = CellState::Snake;
+            }
+        }
+    }
+
+    fn render(&self) {
+        for x in 0..FIELD_WIDTH {
+            for y in 0..FIELD_HEIGHT {
+                print!(
+                    "{}",
+                    if matches!(
+                        self.cell_cols[usize::from(y)][usize::from(x)],
+                        CellState::Empty
+                    ) {
+                        " "
+                    } else {
+                        "S"
+                    }
+                );
+            }
+            print!("\n");
         }
     }
 }
 
-// fn render_field(snakes: &Vec<Snake>) {
-//     for _ in 0..FIELD_HEIGHT {
-//         for _ in 0..FIELD_WIDTH {
-//             print!(" ");
-//         }
-//         print!("\n");
-//     }
-// }
-
 fn main() {
-    // let mut vec_2d: Vec<Vec<CellState>> = vec![vec![CellState::Empty]];
-    // vec_2d.push(vec![CellState::Apple]);
-    let field = Field::new();
+    let mut field = Field::new();
+    let mut snakes = vec![Snake::new()];
+    loop {
+        sleep(Duration::from_millis(500));
+
+        for snake in &mut snakes {
+            snake.tick();
+        }
+
+        field.clear();
+        field.render_snakes(&snakes);
+        field.render();
+    }
 }
