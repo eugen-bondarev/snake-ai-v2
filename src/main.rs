@@ -1,3 +1,5 @@
+use std::vec;
+
 use rand::Rng;
 
 static FIELD_WIDTH: u8 = 16;
@@ -39,6 +41,7 @@ impl Snake {
     }
 }
 
+#[derive(Copy, Clone)]
 enum CellState {
     Empty,
     Snake,
@@ -46,14 +49,26 @@ enum CellState {
 }
 
 struct Field {
-    cells: Vec<Vec<CellState>>,
+    cells: Vec<Vec<i32>>,
 }
 
-use std::iter;
+fn fill<T>(size: usize, val: T) -> Vec<T>
+where
+    T: Copy,
+{
+    let mut zero_vec: Vec<T> = Vec::with_capacity(size);
+    for i in 0..size {
+        zero_vec.push(val);
+    }
+    zero_vec
+}
 
 impl Field {
     fn new() -> Field {
-        Field {}
+        let foo = fill(FIELD_HEIGHT.into(), 3);
+        Field {
+            cells: fill(FIELD_WIDTH.into(), foo),
+        }
     }
 }
 
@@ -67,10 +82,7 @@ impl Field {
 // }
 
 fn main() {
-    [0..FIELD_WIDTH]
-        .into_iter()
-        .map(|_| CellState::Empty)
-        .collect();
-    // render_field(&vec![Snake::new()]);
+    // let mut vec_2d: Vec<Vec<CellState>> = vec![vec![CellState::Empty]];
+    // vec_2d.push(vec![CellState::Apple]);
     let field = Field::new();
 }
