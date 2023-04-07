@@ -34,7 +34,21 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     }
 }
 
+use tch::nn::{LinearConfig, Module, OptimizerConfig};
+use tch::{kind, nn, Device, Tensor};
+
+fn my_module(p: nn::Path, dim: i64) -> impl nn::Module {
+    let x1 = p.zeros("x1", &[dim]);
+    let x2 = p.zeros("x2", &[dim]);
+    nn::func(move |xs| xs * &x1 + xs.exp() * &x2)
+}
+
 fn main() {
+    let res = 42;
+    let f = nn::seq();
+    f.add(nn::linear(vs, 50, 10, LinearConfig {}));
+    println!("{:?}", res);
+    return;
     let mut snakes: Vec<Snake> = vec![Snake::new()];
     let status_bar_height = 3;
     let mut engine = ConsoleEngine::init(
