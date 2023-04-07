@@ -6,6 +6,7 @@ use dfdx::{
     shapes::Rank1,
     tensor::{Cpu, Tensor, ZerosTensor},
 };
+use rand::{thread_rng, Rng};
 use snake::{Direction, Snake, FIELD_HEIGHT, FIELD_WIDTH};
 
 fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
@@ -39,21 +40,77 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     }
 }
 
+trait GeneticAlgorithm<T> {
+    fn crossover(a: T, b: T, mask: u32) -> T;
+}
+
+impl GeneticAlgorithm<u32> for u32 {
+    fn crossover(a: u32, b: u32, mask: u32) -> u32 {
+        (a & mask) | (b & !mask)
+    }
+}
+
+impl GeneticAlgorithm<f32> for f32 {
+    fn crossover(a: f32, b: f32, mask: u32) -> f32 {
+        f32::from_bits(u32::crossover(a.to_bits(), b.to_bits(), mask))
+    }
+}
+
+trait BitMask {
+    fn create_bit_mask(intersections: u8) -> u32;
+}
+
+impl BitMask for u32 {
+    fn create_bit_mask(intersections: u8) -> u32 {
+        let mut test = 32;
+        let mut bar: Vec<u8> = vec![0; (intersections - 1).into()]
+            .iter()
+            .map(|_| {
+                let res = thread_rng().gen_range(0..test);
+                test -= res;
+                res
+            })
+            .collect();
+
+        bar.push(test);
+        println!("{:?}", bar);
+
+        let mut baz = String::from("");
+
+        for i in bar {
+            let symbol = if thread_rng().gen_bool(0.5) { "1" } else { "0" };
+            for j in 0..i {
+                baz += symbol;
+            }
+        }
+
+        u32::from_str_radix(baz.as_str(), 2).unwrap()
+    }
+}
+
 fn main() {
     let res = 42;
 
-    type NN = (
-        (Linear<20, 8>, Sigmoid),
-        (Linear<8, 8>, Sigmoid),
-        (Linear<8, 4>, Sigmoid),
-    );
+    type NN = ((Linear<20, 8>, Sigmoid), (Linear<8, 4>, Sigmoid));
 
     let dev: Cpu = Default::default();
     let mlp = dev.build_module::<NN, f32>();
     let x: Tensor<Rank1<20>, f32, Cpu> = dev.zeros();
     let y: Tensor<Rank1<4>, f32, Cpu> = mlp.forward(x);
 
-    println!("{:?}", y.as_vec());
+    let a: f32 = 0.314159;
+    let b: f32 = 0.84123;
+    // u32::create_bit_mask(3);
+    let c = f32::crossover(
+        a,
+        b,
+        u32::from_str_radix("00000000000000001111111111111111", 2).unwrap(),
+    );
+    println!("a: {}", a);
+    println!("b: {}", b);
+    println!("c: {}", c);
+    println!("d: {:032b}", u32::create_bit_mask(3));
+
     return;
     let mut snakes: Vec<Snake> = vec![Snake::new()];
     let status_bar_height = 3;
