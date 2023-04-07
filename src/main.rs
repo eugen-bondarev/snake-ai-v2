@@ -1,6 +1,11 @@
 mod snake;
 
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
+use dfdx::{
+    prelude::{DeviceBuildExt, Linear, Module, Sigmoid},
+    shapes::Rank1,
+    tensor::{Cpu, Tensor, ZerosTensor},
+};
 use snake::{Direction, Snake, FIELD_HEIGHT, FIELD_WIDTH};
 
 fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
@@ -34,20 +39,21 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     }
 }
 
-use tch::nn::{LinearConfig, Module, OptimizerConfig};
-use tch::{kind, nn, Device, Tensor};
-
-fn my_module(p: nn::Path, dim: i64) -> impl nn::Module {
-    let x1 = p.zeros("x1", &[dim]);
-    let x2 = p.zeros("x2", &[dim]);
-    nn::func(move |xs| xs * &x1 + xs.exp() * &x2)
-}
-
 fn main() {
     let res = 42;
-    let f = nn::seq();
-    f.add(nn::linear(vs, 50, 10, LinearConfig {}));
-    println!("{:?}", res);
+
+    type NN = (
+        (Linear<20, 8>, Sigmoid),
+        (Linear<8, 8>, Sigmoid),
+        (Linear<8, 4>, Sigmoid),
+    );
+
+    let dev: Cpu = Default::default();
+    let mlp = dev.build_module::<NN, f32>();
+    let x: Tensor<Rank1<20>, f32, Cpu> = dev.zeros();
+    let y: Tensor<Rank1<4>, f32, Cpu> = mlp.forward(x);
+
+    println!("{:?}", y.as_vec());
     return;
     let mut snakes: Vec<Snake> = vec![Snake::new()];
     let status_bar_height = 3;
