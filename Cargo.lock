@@ -274,6 +274,7 @@ dependencies = [
  "console_engine",
  "crossterm",
  "drawille",
+ "lazy_static",
  "rand",
 ]
 

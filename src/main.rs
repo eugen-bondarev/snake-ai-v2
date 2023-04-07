@@ -1,246 +1,169 @@
-// use std::{thread::sleep, time::Duration, vec};
+mod cell;
 
-// use rand::Rng;
+use std::collections::HashMap;
 
-// static FIELD_WIDTH: u8 = 16;
-// static FIELD_HEIGHT: u8 = 16;
+use cell::Cell;
+use cell::Point;
 
-// struct Cell {
-//     x: u8,
-//     y: u8,
-// }
+#[derive(PartialEq, Eq, Hash)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
-// impl Cell {
-//     fn init_random() -> Cell {
-//         Cell {
-//             x: rand::thread_rng().gen_range(0..FIELD_WIDTH),
-//             y: rand::thread_rng().gen_range(0..FIELD_HEIGHT),
-//         }
-//     }
+struct Snake {
+    cells: Vec<Cell>,
+    apple: Cell,
+    direction: Direction,
+    is_alive: bool,
+}
 
-//     fn print(&self) {
-//         println!("{0} {1}", self.x, self.y);
-//     }
-// }
+use lazy_static::lazy_static;
 
-// enum Direction {
-//     Up,
-//     Down,
-//     Left,
-//     Right,
-// }
+impl Snake {
+    fn new() -> Snake {
+        Snake {
+            cells: vec![Cell::init_random()],
+            apple: Cell::init_random(),
+            direction: Direction::Up,
+            is_alive: true,
+        }
+    }
 
-// struct Snake {
-//     cells: Vec<Cell>,
-//     direction: Direction,
-// }
+    fn tick(&mut self) {
+        if !self.is_alive {
+            self.cells = vec![Cell::init_random()];
+            self.direction = Direction::Up;
+            self.is_alive = true;
+            self.apple = Cell::init_random();
+        }
 
-// impl Snake {
-//     fn new() -> Snake {
-//         Snake {
-//             cells: vec![Cell::init_random()],
-//             direction: Direction::Up,
-//         }
-//     }
+        lazy_static! {
+            static ref MAP: HashMap<Direction, Point> = vec![
+                (Direction::Up, (0, -1)),
+                (Direction::Down, (0, 1)),
+                (Direction::Left, (-1, 0)),
+                (Direction::Right, (1, 0)),
+            ]
+            .into_iter()
+            .collect();
+        }
 
-//     fn tick(&mut self) {
-//         if matches!(self.direction, Direction::Up) {
-//             self.cells[0].y -= 1;
-//         }
-//         if matches!(self.direction, Direction::Down) {
-//             self.cells[0].y += 1;
-//         }
-//         if matches!(self.direction, Direction::Left) {
-//             self.cells[0].x -= 1;
-//         }
-//         if matches!(self.direction, Direction::Right) {
-//             self.cells[0].x += 1;
-//         }
-//     }
+        let matching_point = MAP[&self.direction];
 
-//     fn print(&self) {
-//         for cell in &self.cells {
-//             cell.print();
-//         }
-//     }
-// }
+        for i in 0..self.cells.len() {
+            self.cells[i].prev = self.cells[i].current;
+            if i > 0 {
+                self.cells[i].current = self.cells[i - 1].prev;
+            }
+        }
 
-// #[derive(Copy, Clone)]
-// enum CellState {
-//     Empty,
-//     Snake,
-//     Apple,
-// }
+        self.cells[0].add(&matching_point);
 
-// struct Field {
-//     cell_cols: Vec<Vec<CellState>>,
-// }
+        self.is_alive = self.cells[0].current.0 >= 0
+            && self.cells[0].current.0 < FIELD_WIDTH.into()
+            && self.cells[0].current.1 >= 0
+            && self.cells[0].current.1 < FIELD_HEIGHT.into();
 
-// impl Field {
-//     fn new() -> Field {
-//         let mut cols: Vec<Vec<CellState>> = Vec::with_capacity(FIELD_WIDTH.into());
-//         for _ in 0..FIELD_WIDTH {
-//             let mut cells: Vec<CellState> = Vec::with_capacity(FIELD_HEIGHT.into());
-//             for _ in 0..FIELD_HEIGHT {
-//                 cells.push(CellState::Empty);
-//             }
-//             cols.push(cells);
-//         }
-//         Field { cell_cols: cols }
-//     }
+        if self.apple.current == self.cells[0].current {
+            self.cells.push(Cell {
+                current: self.cells[0].prev,
+                prev: (0, 0),
+            });
+            self.apple = Cell::init_random();
+        }
+    }
 
-//     fn clear(&mut self) {
-//         for x in 0..FIELD_WIDTH {
-//             for y in 0..FIELD_HEIGHT {
-//                 self.cell_cols[usize::from(x)][usize::from(y)] = CellState::Empty;
-//             }
-//         }
-//     }
-
-//     fn render_snakes(&mut self, snakes: &Vec<Snake>) {
-//         for snake in snakes {
-//             for cell in &snake.cells {
-//                 self.cell_cols[usize::from(cell.x)][usize::from(cell.y)] = CellState::Snake;
-//             }
-//         }
-//     }
-
-//     fn render(&self) {
-//         for x in 0..FIELD_WIDTH {
-//             for y in 0..FIELD_HEIGHT {
-//                 print!(
-//                     "{}",
-//                     if matches!(
-//                         self.cell_cols[usize::from(y)][usize::from(x)],
-//                         CellState::Empty
-//                     ) {
-//                         " "
-//                     } else {
-//                         "S"
-//                     }
-//                 );
-//             }
-//             print!("\n");
-//         }
-//     }
-// }
-
-// use crossterm::{
-//     cursor::position,
-//     event::{poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-//     execute,
-//     terminal::{disable_raw_mode, enable_raw_mode},
-//     Result,
-// };
-
-// use colored::*;
-
-// fn print_events(callback: &mut dyn FnMut() -> ()) -> Result<()> {
-//     loop {
-//         // Wait up to 1s for another event
-//         if poll(Duration::from_millis(1_000))? {
-//             // It's guaranteed that read() won't block if `poll` returns `Ok(true)`
-//             let event = read()?;
-
-//             println!("Event::{:?}\r", event);
-
-//             if event == Event::Key(KeyCode::Char('c').into()) {
-//                 println!("Cursor position: {:?}\r", position());
-//             }
-
-//             if event == Event::Key(KeyCode::Esc.into()) {
-//                 break;
-//             }
-//         } else {
-//             callback();
-//             // Timeout expired, no event for 1s
-//             // println!("{}", ".\r".on_blue());
-//         }
-//     }
-
-//     Ok(())
-// }
-
-// use std::io::stdout;
-
-// use std::process::Command;
-
-// extern crate drawille;
-
-// use drawille::Canvas;
-
-// fn main() -> Result<()> {
-//     let mut field = Field::new();
-//     let mut snakes = vec![Snake::new()];
-
-//     enable_raw_mode()?;
-
-//     let mut canvas = Canvas::new(10, 10);
-//     canvas.set(5, 4);
-//     canvas.line(2, 2, 8, 8);
-//     assert_eq!(canvas.frame(), [" ⢄    ", "  ⠙⢄  ", "    ⠁ "].join("\n"));
-
-//     let mut stdout = stdout();
-//     execute!(stdout, EnableMouseCapture)?;
-
-//     if let Err(e) = print_events(&mut || {
-//         for snake in &mut snakes {
-//             snake.tick();
-//         }
-//         field.clear();
-//         field.render_snakes(&snakes);
-
-//         // print!("\x1B[2J");
-//         field.render();
-//     }) {
-//         println!("Error: {:?}\r", e);
-//     }
-
-//     execute!(stdout, DisableMouseCapture)?;
-
-//     disable_raw_mode()
-// }
-
-// fn main() {
-//     let mut field = Field::new();
-//     let mut snakes = vec![Snake::new()];
-//     loop {
-//         sleep(Duration::from_millis(500));
-
-//         for snake in &mut snakes {
-//             snake.tick();
-//         }
-
-//         field.clear();
-//         field.render_snakes(&snakes);
-//         field.render();
-//     }
-// }
+    fn print(&self) {
+        for cell in &self.cells {
+            cell.print();
+        }
+    }
+}
 
 use console_engine::pixel;
 use console_engine::Color;
+use console_engine::ConsoleEngine;
 use console_engine::KeyCode;
 
+use crate::cell::FIELD_HEIGHT;
+use crate::cell::FIELD_WIDTH;
+
+fn draw_borders(canvas: &mut ConsoleEngine) {
+    let border_color = Color::DarkRed;
+
+    let corner_pixel = pixel::pxl_bg(' ', border_color);
+    let horizontal_pixel = pixel::pxl_bg(' ', border_color);
+    let vertical_pixel = pixel::pxl_bg(' ', border_color);
+
+    canvas.set_pxl(0, 0, corner_pixel);
+    canvas.set_pxl((FIELD_WIDTH - 1).into(), 0, corner_pixel);
+    canvas.set_pxl(
+        (FIELD_WIDTH - 1).into(),
+        (FIELD_HEIGHT - 1).into(),
+        corner_pixel,
+    );
+    canvas.set_pxl(0, (FIELD_HEIGHT - 1).into(), corner_pixel);
+
+    for x in 1..FIELD_WIDTH - 1 {
+        canvas.set_pxl(x.into(), 0, horizontal_pixel);
+        canvas.set_pxl(x.into(), (FIELD_HEIGHT - 1).into(), horizontal_pixel);
+    }
+    for y in 1..FIELD_HEIGHT - 1 {
+        canvas.set_pxl(0, y.into(), vertical_pixel);
+        canvas.set_pxl((FIELD_WIDTH - 1).into(), y.into(), vertical_pixel);
+    }
+}
+
 fn main() {
-    // initializes a screen of 20x10 characters with a target of 3 frames per second
-    // coordinates will range from [0,0] to [19,9]
-    let mut engine = console_engine::ConsoleEngine::init(20, 10, 3).unwrap();
-    let value = 14;
-    // main loop, be aware that you'll have to break it because ctrl+C is captured
+    let mut snakes: Vec<Snake> = vec![Snake::new()];
+
+    let mut engine = ConsoleEngine::init(FIELD_WIDTH.into(), FIELD_HEIGHT.into(), 15).unwrap();
+
     loop {
-        engine.wait_frame(); // wait for next frame + capture inputs
-        engine.clear_screen(); // reset the screen
+        engine.wait_frame();
+        engine.clear_screen();
 
-        engine.line(0, 0, 19, 9, pixel::pxl('#')); // draw a line of '#' from [0,0] to [19,9]
-        engine.print(0, 4, format!("Result: {}", value).as_str()); // prints some value at [0,4]
+        // draw_borders(&mut engine);
 
-        engine.set_pxl(4, 0, pixel::pxl_fg('O', Color::Cyan)); // write a majestic cyan 'O' at [4,0]
-
-        if engine.is_key_pressed(KeyCode::Char('q')) {
-            // if the user presses 'q' :
-            break; // exits app
+        for snake in &mut snakes {
+            snake.tick();
+            engine.set_pxl(
+                snake.apple.current.0,
+                snake.apple.current.1,
+                pixel::pxl_bg(' ', Color::Red),
+            );
+            for cell in &snake.cells {
+                engine.set_pxl(
+                    cell.current.0.into(),
+                    cell.current.1.into(),
+                    pixel::pxl_bg(' ', Color::Green),
+                );
+            }
         }
 
-        engine.draw(); // draw the screen
+        if engine.is_key_pressed(KeyCode::Char('d')) {
+            snakes[0].direction = Direction::Right;
+        }
+
+        if engine.is_key_pressed(KeyCode::Char('a')) {
+            snakes[0].direction = Direction::Left;
+        }
+
+        if engine.is_key_pressed(KeyCode::Char('w')) {
+            snakes[0].direction = Direction::Up;
+        }
+
+        if engine.is_key_pressed(KeyCode::Char('s')) {
+            snakes[0].direction = Direction::Down;
+        }
+
+        if engine.is_key_pressed(KeyCode::Esc) {
+            break;
+        }
+
+        engine.draw();
     }
 }
