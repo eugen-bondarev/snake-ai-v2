@@ -43,6 +43,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_engine"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b05723615fd3ab8251764e161f1a6c65cce538d3d7902b94ee3290a0c5811e24"
+dependencies = [
+ "crossterm",
+ "unicode-width",
+]
+
+[[package]]
 name = "crossterm"
 version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -261,10 +271,17 @@ name = "snake-ai-v2"
 version = "0.1.0"
 dependencies = [
  "colored",
+ "console_engine",
  "crossterm",
  "drawille",
  "rand",
 ]
+
+[[package]]
+name = "unicode-width"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0edd1e5b14653f783770bce4a4dabb4a5108a5370a5f5d8cfe8710c361f6c8b"
 
 [[package]]
 name = "wasi"

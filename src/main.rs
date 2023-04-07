@@ -1,205 +1,205 @@
-use std::{thread::sleep, time::Duration, vec};
+// use std::{thread::sleep, time::Duration, vec};
 
-use rand::Rng;
+// use rand::Rng;
 
-static FIELD_WIDTH: u8 = 16;
-static FIELD_HEIGHT: u8 = 16;
+// static FIELD_WIDTH: u8 = 16;
+// static FIELD_HEIGHT: u8 = 16;
 
-struct Cell {
-    x: u8,
-    y: u8,
-}
+// struct Cell {
+//     x: u8,
+//     y: u8,
+// }
 
-impl Cell {
-    fn init_random() -> Cell {
-        Cell {
-            x: rand::thread_rng().gen_range(0..FIELD_WIDTH),
-            y: rand::thread_rng().gen_range(0..FIELD_HEIGHT),
-        }
-    }
+// impl Cell {
+//     fn init_random() -> Cell {
+//         Cell {
+//             x: rand::thread_rng().gen_range(0..FIELD_WIDTH),
+//             y: rand::thread_rng().gen_range(0..FIELD_HEIGHT),
+//         }
+//     }
 
-    fn print(&self) {
-        println!("{0} {1}", self.x, self.y);
-    }
-}
+//     fn print(&self) {
+//         println!("{0} {1}", self.x, self.y);
+//     }
+// }
 
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
+// enum Direction {
+//     Up,
+//     Down,
+//     Left,
+//     Right,
+// }
 
-struct Snake {
-    cells: Vec<Cell>,
-    direction: Direction,
-}
+// struct Snake {
+//     cells: Vec<Cell>,
+//     direction: Direction,
+// }
 
-impl Snake {
-    fn new() -> Snake {
-        Snake {
-            cells: vec![Cell::init_random()],
-            direction: Direction::Up,
-        }
-    }
+// impl Snake {
+//     fn new() -> Snake {
+//         Snake {
+//             cells: vec![Cell::init_random()],
+//             direction: Direction::Up,
+//         }
+//     }
 
-    fn tick(&mut self) {
-        if matches!(self.direction, Direction::Up) {
-            self.cells[0].y -= 1;
-        }
-        if matches!(self.direction, Direction::Down) {
-            self.cells[0].y += 1;
-        }
-        if matches!(self.direction, Direction::Left) {
-            self.cells[0].x -= 1;
-        }
-        if matches!(self.direction, Direction::Right) {
-            self.cells[0].x += 1;
-        }
-    }
+//     fn tick(&mut self) {
+//         if matches!(self.direction, Direction::Up) {
+//             self.cells[0].y -= 1;
+//         }
+//         if matches!(self.direction, Direction::Down) {
+//             self.cells[0].y += 1;
+//         }
+//         if matches!(self.direction, Direction::Left) {
+//             self.cells[0].x -= 1;
+//         }
+//         if matches!(self.direction, Direction::Right) {
+//             self.cells[0].x += 1;
+//         }
+//     }
 
-    fn print(&self) {
-        for cell in &self.cells {
-            cell.print();
-        }
-    }
-}
+//     fn print(&self) {
+//         for cell in &self.cells {
+//             cell.print();
+//         }
+//     }
+// }
 
-#[derive(Copy, Clone)]
-enum CellState {
-    Empty,
-    Snake,
-    Apple,
-}
+// #[derive(Copy, Clone)]
+// enum CellState {
+//     Empty,
+//     Snake,
+//     Apple,
+// }
 
-struct Field {
-    cell_cols: Vec<Vec<CellState>>,
-}
+// struct Field {
+//     cell_cols: Vec<Vec<CellState>>,
+// }
 
-impl Field {
-    fn new() -> Field {
-        let mut cols: Vec<Vec<CellState>> = Vec::with_capacity(FIELD_WIDTH.into());
-        for _ in 0..FIELD_WIDTH {
-            let mut cells: Vec<CellState> = Vec::with_capacity(FIELD_HEIGHT.into());
-            for _ in 0..FIELD_HEIGHT {
-                cells.push(CellState::Empty);
-            }
-            cols.push(cells);
-        }
-        Field { cell_cols: cols }
-    }
+// impl Field {
+//     fn new() -> Field {
+//         let mut cols: Vec<Vec<CellState>> = Vec::with_capacity(FIELD_WIDTH.into());
+//         for _ in 0..FIELD_WIDTH {
+//             let mut cells: Vec<CellState> = Vec::with_capacity(FIELD_HEIGHT.into());
+//             for _ in 0..FIELD_HEIGHT {
+//                 cells.push(CellState::Empty);
+//             }
+//             cols.push(cells);
+//         }
+//         Field { cell_cols: cols }
+//     }
 
-    fn clear(&mut self) {
-        for x in 0..FIELD_WIDTH {
-            for y in 0..FIELD_HEIGHT {
-                self.cell_cols[usize::from(x)][usize::from(y)] = CellState::Empty;
-            }
-        }
-    }
+//     fn clear(&mut self) {
+//         for x in 0..FIELD_WIDTH {
+//             for y in 0..FIELD_HEIGHT {
+//                 self.cell_cols[usize::from(x)][usize::from(y)] = CellState::Empty;
+//             }
+//         }
+//     }
 
-    fn render_snakes(&mut self, snakes: &Vec<Snake>) {
-        for snake in snakes {
-            for cell in &snake.cells {
-                self.cell_cols[usize::from(cell.x)][usize::from(cell.y)] = CellState::Snake;
-            }
-        }
-    }
+//     fn render_snakes(&mut self, snakes: &Vec<Snake>) {
+//         for snake in snakes {
+//             for cell in &snake.cells {
+//                 self.cell_cols[usize::from(cell.x)][usize::from(cell.y)] = CellState::Snake;
+//             }
+//         }
+//     }
 
-    fn render(&self) {
-        for x in 0..FIELD_WIDTH {
-            for y in 0..FIELD_HEIGHT {
-                print!(
-                    "{}",
-                    if matches!(
-                        self.cell_cols[usize::from(y)][usize::from(x)],
-                        CellState::Empty
-                    ) {
-                        " "
-                    } else {
-                        "S"
-                    }
-                );
-            }
-            print!("\n");
-        }
-    }
-}
+//     fn render(&self) {
+//         for x in 0..FIELD_WIDTH {
+//             for y in 0..FIELD_HEIGHT {
+//                 print!(
+//                     "{}",
+//                     if matches!(
+//                         self.cell_cols[usize::from(y)][usize::from(x)],
+//                         CellState::Empty
+//                     ) {
+//                         " "
+//                     } else {
+//                         "S"
+//                     }
+//                 );
+//             }
+//             print!("\n");
+//         }
+//     }
+// }
 
-use crossterm::{
-    cursor::position,
-    event::{poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode},
-    Result,
-};
+// use crossterm::{
+//     cursor::position,
+//     event::{poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+//     execute,
+//     terminal::{disable_raw_mode, enable_raw_mode},
+//     Result,
+// };
 
-use colored::*;
+// use colored::*;
 
-fn print_events(callback: &mut dyn FnMut() -> ()) -> Result<()> {
-    loop {
-        // Wait up to 1s for another event
-        if poll(Duration::from_millis(1_000))? {
-            // It's guaranteed that read() won't block if `poll` returns `Ok(true)`
-            let event = read()?;
+// fn print_events(callback: &mut dyn FnMut() -> ()) -> Result<()> {
+//     loop {
+//         // Wait up to 1s for another event
+//         if poll(Duration::from_millis(1_000))? {
+//             // It's guaranteed that read() won't block if `poll` returns `Ok(true)`
+//             let event = read()?;
 
-            println!("Event::{:?}\r", event);
+//             println!("Event::{:?}\r", event);
 
-            if event == Event::Key(KeyCode::Char('c').into()) {
-                println!("Cursor position: {:?}\r", position());
-            }
+//             if event == Event::Key(KeyCode::Char('c').into()) {
+//                 println!("Cursor position: {:?}\r", position());
+//             }
 
-            if event == Event::Key(KeyCode::Esc.into()) {
-                break;
-            }
-        } else {
-            callback();
-            // Timeout expired, no event for 1s
-            // println!("{}", ".\r".on_blue());
-        }
-    }
+//             if event == Event::Key(KeyCode::Esc.into()) {
+//                 break;
+//             }
+//         } else {
+//             callback();
+//             // Timeout expired, no event for 1s
+//             // println!("{}", ".\r".on_blue());
+//         }
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-use std::io::stdout;
+// use std::io::stdout;
 
-use std::process::Command;
+// use std::process::Command;
 
-extern crate drawille;
+// extern crate drawille;
 
-use drawille::Canvas;
+// use drawille::Canvas;
 
-fn main() -> Result<()> {
-    let mut field = Field::new();
-    let mut snakes = vec![Snake::new()];
+// fn main() -> Result<()> {
+//     let mut field = Field::new();
+//     let mut snakes = vec![Snake::new()];
 
-    enable_raw_mode()?;
+//     enable_raw_mode()?;
 
-    let mut canvas = Canvas::new(10, 10);
-    canvas.set(5, 4);
-    canvas.line(2, 2, 8, 8);
-    assert_eq!(canvas.frame(), [" ⢄    ", "  ⠙⢄  ", "    ⠁ "].join("\n"));
+//     let mut canvas = Canvas::new(10, 10);
+//     canvas.set(5, 4);
+//     canvas.line(2, 2, 8, 8);
+//     assert_eq!(canvas.frame(), [" ⢄    ", "  ⠙⢄  ", "    ⠁ "].join("\n"));
 
-    let mut stdout = stdout();
-    execute!(stdout, EnableMouseCapture)?;
+//     let mut stdout = stdout();
+//     execute!(stdout, EnableMouseCapture)?;
 
-    if let Err(e) = print_events(&mut || {
-        for snake in &mut snakes {
-            snake.tick();
-        }
-        field.clear();
-        field.render_snakes(&snakes);
+//     if let Err(e) = print_events(&mut || {
+//         for snake in &mut snakes {
+//             snake.tick();
+//         }
+//         field.clear();
+//         field.render_snakes(&snakes);
 
-        // print!("\x1B[2J");
-        field.render();
-    }) {
-        println!("Error: {:?}\r", e);
-    }
+//         // print!("\x1B[2J");
+//         field.render();
+//     }) {
+//         println!("Error: {:?}\r", e);
+//     }
 
-    execute!(stdout, DisableMouseCapture)?;
+//     execute!(stdout, DisableMouseCapture)?;
 
-    disable_raw_mode()
-}
+//     disable_raw_mode()
+// }
 
 // fn main() {
 //     let mut field = Field::new();
@@ -216,3 +216,31 @@ fn main() -> Result<()> {
 //         field.render();
 //     }
 // }
+
+use console_engine::pixel;
+use console_engine::Color;
+use console_engine::KeyCode;
+
+fn main() {
+    // initializes a screen of 20x10 characters with a target of 3 frames per second
+    // coordinates will range from [0,0] to [19,9]
+    let mut engine = console_engine::ConsoleEngine::init(20, 10, 3).unwrap();
+    let value = 14;
+    // main loop, be aware that you'll have to break it because ctrl+C is captured
+    loop {
+        engine.wait_frame(); // wait for next frame + capture inputs
+        engine.clear_screen(); // reset the screen
+
+        engine.line(0, 0, 19, 9, pixel::pxl('#')); // draw a line of '#' from [0,0] to [19,9]
+        engine.print(0, 4, format!("Result: {}", value).as_str()); // prints some value at [0,4]
+
+        engine.set_pxl(4, 0, pixel::pxl_fg('O', Color::Cyan)); // write a majestic cyan 'O' at [4,0]
+
+        if engine.is_key_pressed(KeyCode::Char('q')) {
+            // if the user presses 'q' :
+            break; // exits app
+        }
+
+        engine.draw(); // draw the screen
+    }
+}
