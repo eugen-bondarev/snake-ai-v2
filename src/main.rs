@@ -125,18 +125,94 @@ impl Field {
     }
 }
 
-fn main() {
+use crossterm::{
+    cursor::position,
+    event::{poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode},
+    Result,
+};
+
+use colored::*;
+
+fn print_events(callback: &mut dyn FnMut() -> ()) -> Result<()> {
+    loop {
+        // Wait up to 1s for another event
+        if poll(Duration::from_millis(1_000))? {
+            // It's guaranteed that read() won't block if `poll` returns `Ok(true)`
+            let event = read()?;
+
+            println!("Event::{:?}\r", event);
+
+            if event == Event::Key(KeyCode::Char('c').into()) {
+                println!("Cursor position: {:?}\r", position());
+            }
+
+            if event == Event::Key(KeyCode::Esc.into()) {
+                break;
+            }
+        } else {
+            callback();
+            // Timeout expired, no event for 1s
+            // println!("{}", ".\r".on_blue());
+        }
+    }
+
+    Ok(())
+}
+
+use std::io::stdout;
+
+use std::process::Command;
+
+extern crate drawille;
+
+use drawille::Canvas;
+
+fn main() -> Result<()> {
     let mut field = Field::new();
     let mut snakes = vec![Snake::new()];
-    loop {
-        sleep(Duration::from_millis(500));
 
+    enable_raw_mode()?;
+
+    let mut canvas = Canvas::new(10, 10);
+    canvas.set(5, 4);
+    canvas.line(2, 2, 8, 8);
+    assert_eq!(canvas.frame(), [" ⢄    ", "  ⠙⢄  ", "    ⠁ "].join("\n"));
+
+    let mut stdout = stdout();
+    execute!(stdout, EnableMouseCapture)?;
+
+    if let Err(e) = print_events(&mut || {
         for snake in &mut snakes {
             snake.tick();
         }
-
         field.clear();
         field.render_snakes(&snakes);
+
+        // print!("\x1B[2J");
         field.render();
+    }) {
+        println!("Error: {:?}\r", e);
     }
+
+    execute!(stdout, DisableMouseCapture)?;
+
+    disable_raw_mode()
 }
+
+// fn main() {
+//     let mut field = Field::new();
+//     let mut snakes = vec![Snake::new()];
+//     loop {
+//         sleep(Duration::from_millis(500));
+
+//         for snake in &mut snakes {
+//             snake.tick();
+//         }
+
+//         field.clear();
+//         field.render_snakes(&snakes);
+//         field.render();
+//     }
+// }
