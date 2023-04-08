@@ -7,15 +7,15 @@ use rand::{thread_rng, Rng};
 type Activation = ReLU;
 
 type Model = (
-    (Linear<6, 2>, Activation),
+    (Linear<6, 4>, Activation),
     // (Linear<12, 12>, Activation),
-    (Linear<2, 4>, Activation),
+    // (Linear<2, 4>, Activation),
     Linear<4, 4>,
 );
 type InitializedModel = (
-    (modules::Linear<6, 2, f32, Cpu>, Activation),
+    (modules::Linear<6, 4, f32, Cpu>, Activation),
     // (modules::Linear<12, 12, f32, Cpu>, Activation),
-    (modules::Linear<2, 4, f32, Cpu>, Activation),
+    // (modules::Linear<2, 4, f32, Cpu>, Activation),
     modules::Linear<4, 4, f32, Cpu>,
 );
 
@@ -119,18 +119,18 @@ impl Genome {
             &b.neural_network.0 .0.weight.as_vec(),
             mutation_rate,
         );
-        let c_1 = Vec::<f32>::crossover(
-            &a.neural_network.1 .0.weight.as_vec(),
-            &b.neural_network.1 .0.weight.as_vec(),
-            mutation_rate,
-        );
+        // let c_1 = Vec::<f32>::crossover(
+        //     &a.neural_network.1 .0.weight.as_vec(),
+        //     &b.neural_network.1 .0.weight.as_vec(),
+        //     mutation_rate,
+        // );
         // let c_2 = Vec::<f32>::crossover(
         //     &a.neural_network.2 .0.weight.as_vec(),
         //     &b.neural_network.2 .0.weight.as_vec(),
         // );
         let c_3 = Vec::<f32>::crossover(
-            &a.neural_network.2.weight.as_vec(),
-            &b.neural_network.2.weight.as_vec(),
+            &a.neural_network.1.weight.as_vec(),
+            &b.neural_network.1.weight.as_vec(),
             mutation_rate,
         );
 
@@ -139,18 +139,18 @@ impl Genome {
             &b.neural_network.0 .0.bias.as_vec(),
             mutation_rate,
         );
-        let b_1 = Vec::<f32>::crossover(
-            &a.neural_network.1 .0.bias.as_vec(),
-            &b.neural_network.1 .0.bias.as_vec(),
-            mutation_rate,
-        );
+        // let b_1 = Vec::<f32>::crossover(
+        //     &a.neural_network.1 .0.bias.as_vec(),
+        //     &b.neural_network.1 .0.bias.as_vec(),
+        //     mutation_rate,
+        // );
         // let b_2 = Vec::<f32>::crossover(
         //     &a.neural_network.2 .0.bias.as_vec(),
         //     &b.neural_network.2 .0.bias.as_vec(),
         // );
         let b_3 = Vec::<f32>::crossover(
-            &a.neural_network.2.bias.as_vec(),
-            &b.neural_network.2.bias.as_vec(),
+            &a.neural_network.1.bias.as_vec(),
+            &b.neural_network.1.bias.as_vec(),
             mutation_rate,
         );
 
@@ -169,14 +169,14 @@ impl Genome {
         // }
 
         neural_network.0 .0.weight.copy_from(&c_0[..]);
-        neural_network.1 .0.weight.copy_from(&c_1[..]);
+        // neural_network.1 .0.weight.copy_from(&c_1[..]);
         // neural_network.2 .0.weight.copy_from(&c_2[..]);
-        neural_network.2.weight.copy_from(&c_3[..]);
+        neural_network.1.weight.copy_from(&c_3[..]);
 
         neural_network.0 .0.bias.copy_from(&b_0[..]);
-        neural_network.1 .0.bias.copy_from(&b_1[..]);
+        // neural_network.1 .0.bias.copy_from(&b_1[..]);
         // neural_network.2 .0.bias.copy_from(&b_2[..]);
-        neural_network.2.bias.copy_from(&b_3[..]);
+        neural_network.1.bias.copy_from(&b_3[..]);
 
         Genome { neural_network }
     }
