@@ -46,36 +46,6 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     }
 }
 
-fn create_bit_mask(intersections: u8) -> u32 {
-    // return u32::from_str_radix("00000000000111110000000011111111", 2).unwrap();
-    let mut remaining_capacity = 32;
-    let mut partitions: Vec<u8> = vec![0; (intersections).into()]
-        .iter()
-        .map(|_| {
-            let result = thread_rng().gen_range(0..remaining_capacity);
-            remaining_capacity -= result;
-            result
-        })
-        .collect();
-
-    // partitions.push(remaining_capacity);
-
-    let mut result = String::from("");
-    let mut starting_bit = "0";
-    for i in partitions {
-        for _ in 0..i {
-            result += starting_bit;
-            if result.len() == 32 {
-                break;
-            }
-        }
-        starting_bit = if starting_bit == "0" { "1" } else { "0" };
-    }
-
-    u32::from_str_radix(result.as_str(), 2).unwrap()
-}
-
-use rand::prelude::*;
 use rand_distr::{Distribution, Normal};
 
 fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likelihood: f64) -> u32 {
@@ -100,30 +70,10 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
     }
 }
 
-fn test() {
-    let total = 100;
-    let mut acc = 0;
-    for _ in 0..100 {
-        let num = generate_random_number_tending_towards_smaller(0, 25, 0.0);
-        acc += num;
-
-        // let formatted = format!("{:032b}", u);
-        // if formatted.len() != 32 {
-        //     println!("{}", formatted);
-        //     println!("{}", formatted.len());
-        // }
-    }
-    let avg = acc as f32 / total as f32;
-    println!("Avg: {}", avg);
-}
-
 use rayon::prelude::*;
 
 fn main() {
-    // test();
-    // return;
-    // let mut snakes: Vec<Snake> = vec![Snake::new()];
-    let capacity = 500;
+    let capacity = 5000;
     let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
     for _ in 0..capacity {
         snakes.push(Snake::new());
