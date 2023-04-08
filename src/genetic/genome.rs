@@ -4,18 +4,18 @@ use dfdx::{
 };
 use rand::{thread_rng, Rng};
 
-type Activation = Sigmoid;
+type Activation = ReLU;
 
 type Model = (
-    (Linear<6, 12>, Activation),
+    (Linear<6, 2>, Activation),
     // (Linear<12, 12>, Activation),
-    (Linear<12, 4>, Activation),
+    (Linear<2, 4>, Activation),
     Linear<4, 4>,
 );
 type InitializedModel = (
-    (modules::Linear<6, 12, f32, Cpu>, Activation),
+    (modules::Linear<6, 2, f32, Cpu>, Activation),
     // (modules::Linear<12, 12, f32, Cpu>, Activation),
-    (modules::Linear<12, 4, f32, Cpu>, Activation),
+    (modules::Linear<2, 4, f32, Cpu>, Activation),
     modules::Linear<4, 4, f32, Cpu>,
 );
 
@@ -78,10 +78,6 @@ impl BitMask for u32 {
             }
             starting_bit = if starting_bit == "0" { "1" } else { "0" };
         }
-
-        // while result.len() != 32 {
-        //     result += "0";
-        // }
 
         u32::from_str_radix(result.as_str(), 2).unwrap()
     }

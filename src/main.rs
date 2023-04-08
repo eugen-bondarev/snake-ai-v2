@@ -20,26 +20,26 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     let border_pixel = pixel::pxl_bg(' ', border_color);
 
     canvas.set_pxl(shift.0, shift.1, border_pixel);
-    canvas.set_pxl((FIELD_WIDTH + 3) as i32 + shift.0, shift.1, border_pixel);
+    canvas.set_pxl((FIELD_WIDTH + 1) as i32 + shift.0, shift.1, border_pixel);
     canvas.set_pxl(
-        (FIELD_WIDTH + 3) as i32 + shift.0,
-        (FIELD_HEIGHT + 3) as i32 + shift.1,
+        (FIELD_WIDTH + 1) as i32 + shift.0,
+        (FIELD_HEIGHT + 1) as i32 + shift.1,
         border_pixel,
     );
-    canvas.set_pxl(shift.0, (FIELD_HEIGHT + 3) as i32 + shift.1, border_pixel);
+    canvas.set_pxl(shift.0, (FIELD_HEIGHT + 1) as i32 + shift.1, border_pixel);
 
-    for x in 0..FIELD_WIDTH + 3 {
+    for x in 0..FIELD_WIDTH + 1 {
         canvas.set_pxl(x as i32 + shift.0, shift.1, border_pixel);
         canvas.set_pxl(
             x as i32 + shift.0,
-            (FIELD_HEIGHT + 3) as i32 + shift.1,
+            (FIELD_HEIGHT + 1) as i32 + shift.1,
             border_pixel,
         );
     }
-    for y in 0..FIELD_HEIGHT + 3 {
+    for y in 0..FIELD_HEIGHT + 1 {
         canvas.set_pxl(shift.0, y as i32 + shift.1, border_pixel);
         canvas.set_pxl(
-            (FIELD_WIDTH + 3) as i32 + shift.0,
+            (FIELD_WIDTH + 1) as i32 + shift.0,
             y as i32 + shift.1,
             border_pixel,
         );
@@ -184,14 +184,14 @@ fn main() {
 
             if draw {
                 engine.set_pxl(
-                    snake.get_apple().current.0 + 2 + shift.0,
-                    snake.get_apple().current.1 + 2 + shift.1,
+                    snake.get_apple().current.0 + 1 + shift.0,
+                    snake.get_apple().current.1 + 1 + shift.1,
                     pixel::pxl_bg(' ', Color::Red),
                 );
                 for cell in snake.get_cells() {
                     engine.set_pxl(
-                        cell.current.0 + 2 + shift.0,
-                        cell.current.1 + 2 + shift.1,
+                        cell.current.0 + 1 + shift.0,
+                        cell.current.1 + 1 + shift.1,
                         pixel::pxl_bg(' ', Color::Green),
                     );
                 }
