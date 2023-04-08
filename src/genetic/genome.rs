@@ -4,9 +4,18 @@ use dfdx::{
 };
 use rand::{thread_rng, Rng};
 
-type Model = ((Linear<6, 4>, Sigmoid), Linear<4, 1>);
+type Activation = Sigmoid;
+
+type Model = (
+    (Linear<4, 12>, Activation),
+    // (Linear<12, 12>, Activation),
+    (Linear<12, 4>, Activation),
+    Linear<4, 1>,
+);
 type InitializedModel = (
-    (modules::Linear<6, 4, f32, Cpu>, Sigmoid),
+    (modules::Linear<4, 12, f32, Cpu>, Activation),
+    // (modules::Linear<12, 12, f32, Cpu>, Activation),
+    (modules::Linear<12, 4, f32, Cpu>, Activation),
     modules::Linear<4, 1, f32, Cpu>,
 );
 
@@ -27,6 +36,7 @@ impl GeneticAlgorithm<u32> for u32 {
 
 impl GeneticAlgorithm<f32> for f32 {
     fn crossover(a: f32, b: f32, mask: u32) -> f32 {
+        // (a + b) / 2.0
         f32::from_bits(u32::crossover(a.to_bits(), b.to_bits(), mask))
     }
 }
@@ -77,8 +87,12 @@ impl Crossover for Vec<f32> {
     fn crossover(a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32> {
         let mut c_0: Vec<f32> = Vec::with_capacity(a.capacity());
         for i in 0..a.len() {
-            let x = f32::crossover(a[i], b[i], u32::create_bit_mask(6));
-            c_0.push(x);
+            if thread_rng().gen_bool(0.02) {
+                c_0.push(thread_rng().gen_range(-1.0..1.0));
+            } else {
+                let x = f32::crossover(a[i], b[i], u32::create_bit_mask(3));
+                c_0.push(x);
+            }
         }
         c_0
     }
@@ -100,17 +114,43 @@ impl Genome {
             &b.neural_network.0 .0.weight.as_vec(),
         );
         let c_1 = Vec::<f32>::crossover(
-            &a.neural_network.1.weight.as_vec(),
-            &b.neural_network.1.weight.as_vec(),
+            &a.neural_network.1 .0.weight.as_vec(),
+            &b.neural_network.1 .0.weight.as_vec(),
         );
+        // let c_2 = Vec::<f32>::crossover(
+        //     &a.neural_network.2 .0.weight.as_vec(),
+        //     &b.neural_network.2 .0.weight.as_vec(),
+        // );
+        let c_3 = Vec::<f32>::crossover(
+            &a.neural_network.2.weight.as_vec(),
+            &b.neural_network.2.weight.as_vec(),
+        );
+
         let b_0 = Vec::<f32>::crossover(
             &a.neural_network.0 .0.bias.as_vec(),
             &b.neural_network.0 .0.bias.as_vec(),
         );
         let b_1 = Vec::<f32>::crossover(
-            &a.neural_network.1.bias.as_vec(),
-            &b.neural_network.1.bias.as_vec(),
+            &a.neural_network.1 .0.bias.as_vec(),
+            &b.neural_network.1 .0.bias.as_vec(),
         );
+        // let b_2 = Vec::<f32>::crossover(
+        //     &a.neural_network.2 .0.bias.as_vec(),
+        //     &b.neural_network.2 .0.bias.as_vec(),
+        // );
+        let b_3 = Vec::<f32>::crossover(
+            &a.neural_network.2.bias.as_vec(),
+            &b.neural_network.2.bias.as_vec(),
+        );
+
+        // let b_0 = Vec::<f32>::crossover(
+        //     &a.neural_network.0 .0.bias.as_vec(),
+        //     &b.neural_network.0 .0.bias.as_vec(),
+        // );
+        // let b_1 = Vec::<f32>::crossover(
+        //     &a.neural_network.1.bias.as_vec(),
+        //     &b.neural_network.1.bias.as_vec(),
+        // );
         // let mut c_0: Vec<f32> = Vec::with_capacity(a_0.capacity());
         // for i in 0..a_0.len() {
         //     let x = f32::crossover(a_0[i], b_0[i], u32::create_bit_mask(3));
@@ -118,9 +158,14 @@ impl Genome {
         // }
 
         neural_network.0 .0.weight.copy_from(&c_0[..]);
+        neural_network.1 .0.weight.copy_from(&c_1[..]);
+        // neural_network.2 .0.weight.copy_from(&c_2[..]);
+        neural_network.2.weight.copy_from(&c_3[..]);
+
         neural_network.0 .0.bias.copy_from(&b_0[..]);
-        neural_network.1.weight.copy_from(&c_1[..]);
-        neural_network.1.bias.copy_from(&b_1[..]);
+        neural_network.1 .0.bias.copy_from(&b_1[..]);
+        // neural_network.2 .0.bias.copy_from(&b_2[..]);
+        neural_network.2.bias.copy_from(&b_3[..]);
 
         Genome { neural_network }
     }

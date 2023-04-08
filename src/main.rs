@@ -54,7 +54,7 @@ fn main() {
     let mut engine = ConsoleEngine::init(
         (FIELD_WIDTH + 4 + 30).into(),
         (FIELD_HEIGHT + 4 + status_bar_height).into(),
-        15,
+        120,
     )
     .unwrap();
 
@@ -93,7 +93,7 @@ fn main() {
 
         if alive_snakes_num == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..100].to_vec();
+            let mut slice = snakes[0..200].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
