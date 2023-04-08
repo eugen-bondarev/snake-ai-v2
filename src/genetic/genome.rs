@@ -54,7 +54,7 @@ trait BitMask {
 
 impl BitMask for u32 {
     fn create_bit_mask(intersections: u8) -> u32 {
-        return u32::from_str_radix("00000000000111110000000011111111", 2).unwrap();
+        // return u32::from_str_radix("00000000000111110000000011111111", 2).unwrap();
         let mut remaining_capacity = 32;
         let mut partitions: Vec<u8> = vec![0; (intersections).into()]
             .iter()

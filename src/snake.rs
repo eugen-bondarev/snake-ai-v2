@@ -44,12 +44,15 @@ impl Snake {
         let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
         x.copy_from(&input[0..input.len()]);
         // 0.233 0.253
-        (self.genome.neural_network.forward(x).as_vec())
+        match (self.genome.neural_network.forward(x).as_vec())
             .iter()
             .enumerate()
-            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-            .map(|(i, _)| i)
-            .unwrap()
+            .max_by(|(_, a), (_, b)| a.total_cmp(b))
+            .map(|(index, _)| index)
+        {
+            Some(s) => s,
+            None => 0,
+        }
     }
 
     pub fn new() -> Snake {

@@ -43,7 +43,50 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     }
 }
 
+fn create_bit_mask(intersections: u8) -> u32 {
+    // return u32::from_str_radix("00000000000111110000000011111111", 2).unwrap();
+    let mut remaining_capacity = 32;
+    let mut partitions: Vec<u8> = vec![0; (intersections).into()]
+        .iter()
+        .map(|_| {
+            let result = thread_rng().gen_range(0..remaining_capacity);
+            remaining_capacity -= result;
+            result
+        })
+        .collect();
+
+    // partitions.push(remaining_capacity);
+
+    let mut result = String::from("");
+    let mut starting_bit = "0";
+    for i in partitions {
+        for _ in 0..i {
+            result += starting_bit;
+            if result.len() == 32 {
+                break;
+            }
+        }
+        starting_bit = if starting_bit == "0" { "1" } else { "0" };
+    }
+
+    u32::from_str_radix(result.as_str(), 2).unwrap()
+}
+
+fn test() {
+    for _ in 0..100000 {
+        let u = create_bit_mask(2);
+
+        // let formatted = format!("{:032b}", u);
+        // if formatted.len() != 32 {
+        //     println!("{}", formatted);
+        //     println!("{}", formatted.len());
+        // }
+    }
+}
+
 fn main() {
+    // test();
+    // return;
     // let mut snakes: Vec<Snake> = vec![Snake::new()];
     let capacity = 5000;
     let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
@@ -95,7 +138,7 @@ fn main() {
 
         if alive_snakes_num == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..50].to_vec();
+            let mut slice = snakes[0..25].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
