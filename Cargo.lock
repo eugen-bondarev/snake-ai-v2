@@ -384,6 +384,7 @@ dependencies = [
  "drawille",
  "lazy_static",
  "rand",
+ "rand_distr",
 ]
 
 [[package]]

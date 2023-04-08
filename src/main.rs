@@ -72,9 +72,37 @@ fn create_bit_mask(intersections: u8) -> u32 {
     u32::from_str_radix(result.as_str(), 2).unwrap()
 }
 
+use rand::prelude::*;
+use rand_distr::{Distribution, Normal};
+
+fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likelihood: f64) -> u32 {
+    let mean = (n + m) / 2;
+    let std_dev = (m - n) / 4;
+    let normal = Normal::new(mean as f64, std_dev as f64).unwrap();
+
+    let mut rng = thread_rng();
+    let mut num;
+    loop {
+        num = normal.sample(&mut rng) as u32;
+        if num >= n && num <= m {
+            break;
+        }
+    }
+
+    let rand_num = rng.gen_range(0.0..1.0);
+    if rand_num <= small_likelihood {
+        n + rng.gen_range(0..(num - n).max(1))
+    } else {
+        num + rng.gen_range(0..(m - num + 1).max(1))
+    }
+}
+
 fn test() {
-    for _ in 0..100000 {
-        let u = create_bit_mask(2);
+    let total = 100;
+    let mut acc = 0;
+    for _ in 0..100 {
+        let num = generate_random_number_tending_towards_smaller(0, 25, 0.0);
+        acc += num;
 
         // let formatted = format!("{:032b}", u);
         // if formatted.len() != 32 {
@@ -82,13 +110,15 @@ fn test() {
         //     println!("{}", formatted.len());
         // }
     }
+    let avg = acc as f32 / total as f32;
+    println!("Avg: {}", avg);
 }
 
 fn main() {
     // test();
     // return;
     // let mut snakes: Vec<Snake> = vec![Snake::new()];
-    let capacity = 5000;
+    let capacity = 2000;
     let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
     for _ in 0..capacity {
         snakes.push(Snake::new());
@@ -138,13 +168,21 @@ fn main() {
 
         if alive_snakes_num == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..25].to_vec();
+            let mut slice = snakes[0..100].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
             for i in (0..capacity).step_by(2) {
-                let parent_a = &slice[thread_rng().gen_range(0..slice.len())];
-                let parent_b = &slice[thread_rng().gen_range(0..slice.len())];
+                let parent_a = &slice[generate_random_number_tending_towards_smaller(
+                    0,
+                    slice.len() as u32 - 1,
+                    0.9,
+                ) as usize];
+                let parent_b = &slice[generate_random_number_tending_towards_smaller(
+                    0,
+                    slice.len() as u32 - 1,
+                    0.9,
+                ) as usize];
                 new_population.push(Snake::crossover(&parent_a, &parent_b));
             }
 

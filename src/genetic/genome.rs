@@ -65,7 +65,7 @@ impl BitMask for u32 {
             })
             .collect();
 
-        // partitions.push(remaining_capacity);
+        partitions.push(remaining_capacity);
 
         let mut result = String::from("");
         let mut starting_bit = "0";
@@ -79,9 +79,9 @@ impl BitMask for u32 {
             starting_bit = if starting_bit == "0" { "1" } else { "0" };
         }
 
-        while result.len() != 32 {
-            result += "0";
-        }
+        // while result.len() != 32 {
+        //     result += "0";
+        // }
 
         u32::from_str_radix(result.as_str(), 2).unwrap()
     }
