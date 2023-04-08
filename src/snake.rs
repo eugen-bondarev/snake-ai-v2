@@ -3,7 +3,7 @@ mod direction;
 
 use std::collections::HashMap;
 
-use dfdx::prelude::{DeviceBuildExt, ModuleMut};
+use dfdx::prelude::{DeviceBuildExt, Module, ModuleMut};
 use dfdx::shapes::Rank1;
 use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
 use lazy_static::lazy_static;
@@ -27,28 +27,29 @@ pub struct Snake {
 
 impl Snake {
     pub fn get_nn_input(&self) -> Vec<f32> {
+        let foo = 1;
         vec![
-            // FIELD_WIDTH as f32 - self.cells[0].current.0 as f32 / FIELD_WIDTH as f32,
-            // FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32 / FIELD_HEIGHT as f32,
-            1.0 * (self.cells[0].current.0 as f32) / (FIELD_WIDTH as f32),
-            1.0 * (self.cells[0].current.1 as f32) / (FIELD_HEIGHT as f32),
-            1.0 * (self.cells[0].current.0 - self.apple.current.0) as f32 / (FIELD_WIDTH as f32),
-            1.0 * (self.cells[0].current.1 - self.apple.current.1) as f32 / (FIELD_HEIGHT as f32),
+            self.cells[0].current.1 as f32 / (foo as f32),
+            (FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32) / (foo as f32),
+            self.cells[0].current.0 as f32 / (foo as f32),
+            (FIELD_WIDTH as f32 - self.cells[0].current.0 as f32) / (foo as f32),
+            (self.cells[0].current.0 - self.apple.current.0) as f32 / (foo as f32),
+            (self.cells[0].current.1 - self.apple.current.1) as f32 / (foo as f32),
         ]
     }
 
-    pub fn get_nn_prediction(&mut self) -> f32 {
+    pub fn get_nn_prediction(&mut self) -> usize {
         let input = self.get_nn_input();
         let dev: Cpu = Default::default();
-        let mut x: Tensor<Rank1<4>, f32, Cpu> = dev.zeros();
+        let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
         x.copy_from(&input[0..input.len()]);
         // 0.233 0.253
-        ((self.genome.neural_network.forward_mut(x).as_vec()[0]).abs())
-        // .iter()
-        // .enumerate()
-        // .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-        // .map(|(i, _)| i)
-        // .unwrap()
+        (self.genome.neural_network.forward(x).as_vec())
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .map(|(i, _)| i)
+            .unwrap()
     }
 
     pub fn new() -> Snake {
@@ -101,7 +102,7 @@ impl Snake {
             .collect();
         }
 
-        self.direction = match (self.get_nn_prediction().floor() as usize) {
+        self.direction = match self.get_nn_prediction() {
             x if x == 0 => Direction::Up,
             x if x == 1 => Direction::Down,
             x if x == 2 => Direction::Left,
@@ -120,7 +121,7 @@ impl Snake {
 
         self.cells[0].add(&matching_point);
 
-        self.is_alive = self.moves_made < 25
+        self.is_alive = self.moves_made < 100
             && self.cells[0].current.0 >= 0
             && self.cells[0].current.0 < FIELD_WIDTH.into()
             && self.cells[0].current.1 >= 0

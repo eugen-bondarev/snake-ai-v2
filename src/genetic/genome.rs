@@ -7,16 +7,16 @@ use rand::{thread_rng, Rng};
 type Activation = Sigmoid;
 
 type Model = (
-    (Linear<4, 12>, Activation),
+    (Linear<6, 12>, Activation),
     // (Linear<12, 12>, Activation),
     (Linear<12, 4>, Activation),
-    Linear<4, 1>,
+    Linear<4, 4>,
 );
 type InitializedModel = (
-    (modules::Linear<4, 12, f32, Cpu>, Activation),
+    (modules::Linear<6, 12, f32, Cpu>, Activation),
     // (modules::Linear<12, 12, f32, Cpu>, Activation),
     (modules::Linear<12, 4, f32, Cpu>, Activation),
-    modules::Linear<4, 1, f32, Cpu>,
+    modules::Linear<4, 4, f32, Cpu>,
 );
 
 #[derive(Clone)]
@@ -54,8 +54,9 @@ trait BitMask {
 
 impl BitMask for u32 {
     fn create_bit_mask(intersections: u8) -> u32 {
+        return u32::from_str_radix("00000000000111110000000011111111", 2).unwrap();
         let mut remaining_capacity = 32;
-        let mut partitions: Vec<u8> = vec![0; (intersections - 1).into()]
+        let mut partitions: Vec<u8> = vec![0; (intersections).into()]
             .iter()
             .map(|_| {
                 let result = thread_rng().gen_range(0..remaining_capacity);
@@ -64,15 +65,22 @@ impl BitMask for u32 {
             })
             .collect();
 
-        partitions.push(remaining_capacity);
+        // partitions.push(remaining_capacity);
 
         let mut result = String::from("");
         let mut starting_bit = "0";
         for i in partitions {
             for _ in 0..i {
                 result += starting_bit;
+                if result.len() == 32 {
+                    break;
+                }
             }
             starting_bit = if starting_bit == "0" { "1" } else { "0" };
+        }
+
+        while result.len() != 32 {
+            result += "0";
         }
 
         u32::from_str_radix(result.as_str(), 2).unwrap()
@@ -87,10 +95,10 @@ impl Crossover for Vec<f32> {
     fn crossover(a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32> {
         let mut c_0: Vec<f32> = Vec::with_capacity(a.capacity());
         for i in 0..a.len() {
-            if thread_rng().gen_bool(0.02) {
-                c_0.push(thread_rng().gen_range(-1.0..1.0));
+            if thread_rng().gen_bool(0.001) {
+                c_0.push(thread_rng().gen_range(-3.0..3.0));
             } else {
-                let x = f32::crossover(a[i], b[i], u32::create_bit_mask(3));
+                let x = f32::crossover(a[i], b[i], u32::create_bit_mask(2));
                 c_0.push(x);
             }
         }

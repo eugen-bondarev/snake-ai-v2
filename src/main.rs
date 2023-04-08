@@ -52,13 +52,15 @@ fn main() {
     }
     let status_bar_height = 3;
     let mut engine = ConsoleEngine::init(
-        (FIELD_WIDTH + 4 + 2).into(),
+        (FIELD_WIDTH + 4 + 60).into(),
         (FIELD_HEIGHT + 4 + status_bar_height).into(),
-        120,
+        300,
     )
     .unwrap();
 
+    let mut generations = 0;
     let mut max = 0;
+    let mut total_max = 0;
 
     loop {
         engine.wait_frame();
@@ -93,7 +95,7 @@ fn main() {
 
         if alive_snakes_num == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..200].to_vec();
+            let mut slice = snakes[0..50].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
@@ -103,20 +105,31 @@ fn main() {
                 new_population.push(Snake::crossover(&parent_a, &parent_b));
             }
 
+            snakes.clear();
+            for snake in new_population {
+                snakes.push(snake);
+            }
+
             for snake in &mut snakes {
                 snake.reborn();
             }
             max = slice[0].get_score();
+            if max > total_max {
+                total_max = max;
+            }
+            generations += 1;
         }
 
         engine.print(
             1,
             0,
             format!(
-                "Score: {}, snakes alive: {}, max fitness: {}",
+                "Score: {}, snakes alive: {}, max fitness: {}, max max: {}, generations: {}",
                 snakes[0].get_score(),
                 alive_snakes_num,
-                max
+                max,
+                total_max,
+                generations
             )
             .as_str(),
         );
