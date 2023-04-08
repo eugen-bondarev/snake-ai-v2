@@ -30,10 +30,10 @@ impl Snake {
         vec![
             // FIELD_WIDTH as f32 - self.cells[0].current.0 as f32 / FIELD_WIDTH as f32,
             // FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32 / FIELD_HEIGHT as f32,
-            250.0 * (self.cells[0].current.0 as f32) / (FIELD_WIDTH as f32),
-            250.0 * (self.cells[0].current.1 as f32) / (FIELD_HEIGHT as f32),
-            250.0 * (self.cells[0].current.0 - self.apple.current.0) as f32 / (FIELD_WIDTH as f32),
-            250.0 * (self.cells[0].current.1 - self.apple.current.1) as f32 / (FIELD_HEIGHT as f32),
+            1.0 * (self.cells[0].current.0 as f32) / (FIELD_WIDTH as f32),
+            1.0 * (self.cells[0].current.1 as f32) / (FIELD_HEIGHT as f32),
+            1.0 * (self.cells[0].current.0 - self.apple.current.0) as f32 / (FIELD_WIDTH as f32),
+            1.0 * (self.cells[0].current.1 - self.apple.current.1) as f32 / (FIELD_HEIGHT as f32),
         ]
     }
 

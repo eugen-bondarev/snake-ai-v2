@@ -52,7 +52,7 @@ fn main() {
     }
     let status_bar_height = 3;
     let mut engine = ConsoleEngine::init(
-        (FIELD_WIDTH + 4 + 30).into(),
+        (FIELD_WIDTH + 4 + 2).into(),
         (FIELD_HEIGHT + 4 + status_bar_height).into(),
         120,
     )

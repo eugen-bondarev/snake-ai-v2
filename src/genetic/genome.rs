@@ -1,5 +1,5 @@
 use dfdx::{
-    prelude::{modules, DeviceBuildExt, Linear, ReLU, Sigmoid},
+    prelude::{modules, DeviceBuildExt, Linear, ReLU, ResetParams, Sigmoid},
     tensor::Cpu,
 };
 use rand::{thread_rng, Rng};
@@ -101,7 +101,8 @@ impl Crossover for Vec<f32> {
 impl Genome {
     pub fn new() -> Genome {
         let dev: Cpu = Default::default();
-        let neural_network = dev.build_module::<Model, f32>();
+        let mut neural_network = dev.build_module::<Model, f32>();
+        neural_network.reset_params();
         Genome { neural_network }
     }
 
