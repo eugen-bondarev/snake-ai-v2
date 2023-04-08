@@ -66,9 +66,9 @@ impl Snake {
         }
     }
 
-    pub fn crossover(a: &Snake, b: &Snake) -> Snake {
+    pub fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
         Snake {
-            genome: Genome::crossover(&a.genome, &b.genome),
+            genome: Genome::crossover(&a.genome, &b.genome, mutation_rate),
             cells: vec![Cell::init_random()],
             apple: Cell::init_random(),
             direction: Direction::Up,

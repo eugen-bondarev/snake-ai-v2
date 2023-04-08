@@ -1,7 +1,10 @@
 mod genetic;
 mod snake;
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
 use dfdx::{
@@ -114,16 +117,18 @@ fn test() {
     println!("Avg: {}", avg);
 }
 
+use rayon::prelude::*;
+
 fn main() {
     // test();
     // return;
     // let mut snakes: Vec<Snake> = vec![Snake::new()];
-    let capacity = 2000;
+    let capacity = 500;
     let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
     for _ in 0..capacity {
         snakes.push(Snake::new());
     }
-    let status_bar_height = 3;
+    let status_bar_height = 8;
     let mut engine = ConsoleEngine::init(
         (FIELD_WIDTH + 4 + 60).into(),
         (FIELD_HEIGHT + 4 + status_bar_height).into(),
@@ -131,9 +136,12 @@ fn main() {
     )
     .unwrap();
 
-    let mut generations = 0;
+    let mut generation = 0;
     let mut max = 0;
-    let mut total_max = 0;
+    let mut max_fitness_prev = 0;
+    let mut mutation_rate = 0.01;
+
+    let mut draw = true;
 
     loop {
         engine.wait_frame();
@@ -141,36 +149,69 @@ fn main() {
 
         let shift = (0, status_bar_height as i32);
 
-        draw_borders(&mut engine, shift);
+        if draw {
+            draw_borders(&mut engine, shift);
+        }
 
-        let mut alive_snakes_num = 0;
+        // let mut alive_snakes_num = 0;
+
+        let batch_size = snakes.len() / 8;
+        let batches: Vec<_> = snakes.chunks_mut(batch_size).collect();
+
+        let max_fitness_current = Arc::new(Mutex::new(0));
+
+        let alive_snakes_num = Arc::new(Mutex::new(0));
+
+        batches.into_par_iter().for_each(|batch| {
+            for item in batch {
+                if item.get_score() > *max_fitness_current.lock().unwrap() {
+                    *max_fitness_current.lock().unwrap() = item.get_score();
+                }
+                if !item.get_is_alive() {
+                    continue;
+                }
+                item.tick();
+                *alive_snakes_num.lock().unwrap() += 1;
+            }
+        });
 
         for snake in &mut snakes {
             if !snake.get_is_alive() {
                 continue;
             }
 
-            snake.tick();
-            engine.set_pxl(
-                snake.get_apple().current.0 + 2 + shift.0,
-                snake.get_apple().current.1 + 2 + shift.1,
-                pixel::pxl_bg(' ', Color::Red),
-            );
-            for cell in snake.get_cells() {
+            // snake.tick();
+
+            if draw {
                 engine.set_pxl(
-                    cell.current.0 + 2 + shift.0,
-                    cell.current.1 + 2 + shift.1,
-                    pixel::pxl_bg(' ', Color::Green),
+                    snake.get_apple().current.0 + 2 + shift.0,
+                    snake.get_apple().current.1 + 2 + shift.1,
+                    pixel::pxl_bg(' ', Color::Red),
                 );
+                for cell in snake.get_cells() {
+                    engine.set_pxl(
+                        cell.current.0 + 2 + shift.0,
+                        cell.current.1 + 2 + shift.1,
+                        pixel::pxl_bg(' ', Color::Green),
+                    );
+                }
             }
-            alive_snakes_num += 1;
+            // alive_snakes_num += 1;
         }
 
-        if alive_snakes_num == 0 {
+        if *alive_snakes_num.lock().unwrap() == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..100].to_vec();
+            let mut slice = snakes[0..capacity / 10].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
+
+            let progress = *max_fitness_current.lock().unwrap() > max_fitness_prev;
+            if progress {
+                mutation_rate -= mutation_rate * 0.1;
+            } else {
+                mutation_rate += mutation_rate * 0.1;
+            }
+            mutation_rate = f64::clamp(mutation_rate, 0.00005 as f64, 0.05 as f64);
 
             for i in (0..capacity).step_by(2) {
                 let parent_a = &slice[generate_random_number_tending_towards_smaller(
@@ -183,7 +224,7 @@ fn main() {
                     slice.len() as u32 - 1,
                     0.9,
                 ) as usize];
-                new_population.push(Snake::crossover(&parent_a, &parent_b));
+                new_population.push(Snake::crossover(&parent_a, &parent_b, mutation_rate));
             }
 
             snakes.clear();
@@ -195,29 +236,33 @@ fn main() {
                 snake.reborn();
             }
             max = slice[0].get_score();
-            if max > total_max {
-                total_max = max;
+            if max > max_fitness_prev {
+                max_fitness_prev = max;
             }
-            generations += 1;
+            generation += 1;
         }
 
         engine.print(
             1,
             0,
+            format!("snakes_alive: {}", *alive_snakes_num.lock().unwrap(),).as_str(),
+        );
+
+        engine.print(1, 1, format!("generation: {}", generation,).as_str());
+        engine.print(1, 2, format!("mutation_rate: {}", mutation_rate).as_str());
+        engine.print(
+            1,
+            3,
             format!(
-                "Score: {}, snakes alive: {}, max fitness: {}, max max: {}, generations: {}",
-                snakes[0].get_score(),
-                alive_snakes_num,
-                max,
-                total_max,
-                generations
+                "max_fitness_current: {}",
+                *max_fitness_current.lock().unwrap()
             )
             .as_str(),
         );
         engine.print(
             1,
-            1,
-            &format!("Prediction: {:?}", snakes[0].get_nn_prediction()),
+            4,
+            format!("max_fitness_prev: {}", max_fitness_prev).as_str(),
         );
 
         if engine.is_key_pressed(KeyCode::Char('d')) {
@@ -234,6 +279,10 @@ fn main() {
 
         if engine.is_key_pressed(KeyCode::Char('s')) {
             snakes[0].set_direction(Direction::Down);
+        }
+
+        if engine.is_key_pressed(KeyCode::Char(' ')) {
+            draw = !draw;
         }
 
         if engine.is_key_pressed(KeyCode::Esc) {

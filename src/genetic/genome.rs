@@ -88,14 +88,14 @@ impl BitMask for u32 {
 }
 
 trait Crossover {
-    fn crossover(a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32>;
+    fn crossover(a: &Vec<f32>, b: &Vec<f32>, mutation_rate: f64) -> Vec<f32>;
 }
 
 impl Crossover for Vec<f32> {
-    fn crossover(a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32> {
+    fn crossover(a: &Vec<f32>, b: &Vec<f32>, mutation_rate: f64) -> Vec<f32> {
         let mut c_0: Vec<f32> = Vec::with_capacity(a.capacity());
         for i in 0..a.len() {
-            if thread_rng().gen_bool(0.001) {
+            if thread_rng().gen_bool(mutation_rate) {
                 c_0.push(thread_rng().gen_range(-3.0..3.0));
             } else {
                 let x = f32::crossover(a[i], b[i], u32::create_bit_mask(2));
@@ -114,17 +114,19 @@ impl Genome {
         Genome { neural_network }
     }
 
-    pub fn crossover(a: &Genome, b: &Genome) -> Genome {
+    pub fn crossover(a: &Genome, b: &Genome, mutation_rate: f64) -> Genome {
         let dev: Cpu = Default::default();
         let mut neural_network = dev.build_module::<Model, f32>();
 
         let c_0 = Vec::<f32>::crossover(
             &a.neural_network.0 .0.weight.as_vec(),
             &b.neural_network.0 .0.weight.as_vec(),
+            mutation_rate,
         );
         let c_1 = Vec::<f32>::crossover(
             &a.neural_network.1 .0.weight.as_vec(),
             &b.neural_network.1 .0.weight.as_vec(),
+            mutation_rate,
         );
         // let c_2 = Vec::<f32>::crossover(
         //     &a.neural_network.2 .0.weight.as_vec(),
@@ -133,15 +135,18 @@ impl Genome {
         let c_3 = Vec::<f32>::crossover(
             &a.neural_network.2.weight.as_vec(),
             &b.neural_network.2.weight.as_vec(),
+            mutation_rate,
         );
 
         let b_0 = Vec::<f32>::crossover(
             &a.neural_network.0 .0.bias.as_vec(),
             &b.neural_network.0 .0.bias.as_vec(),
+            mutation_rate,
         );
         let b_1 = Vec::<f32>::crossover(
             &a.neural_network.1 .0.bias.as_vec(),
             &b.neural_network.1 .0.bias.as_vec(),
+            mutation_rate,
         );
         // let b_2 = Vec::<f32>::crossover(
         //     &a.neural_network.2 .0.bias.as_vec(),
@@ -150,6 +155,7 @@ impl Genome {
         let b_3 = Vec::<f32>::crossover(
             &a.neural_network.2.bias.as_vec(),
             &b.neural_network.2.bias.as_vec(),
+            mutation_rate,
         );
 
         // let b_0 = Vec::<f32>::crossover(
