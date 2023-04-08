@@ -4,10 +4,10 @@ use dfdx::{
 };
 use rand::{thread_rng, Rng};
 
-type Model = ((Linear<4, 20>, ReLU), Linear<20, 1>);
+type Model = ((Linear<6, 4>, Sigmoid), Linear<4, 1>);
 type InitializedModel = (
-    (modules::Linear<4, 20, f32, Cpu>, ReLU),
-    modules::Linear<20, 1, f32, Cpu>,
+    (modules::Linear<6, 4, f32, Cpu>, Sigmoid),
+    modules::Linear<4, 1, f32, Cpu>,
 );
 
 #[derive(Clone)]
@@ -77,7 +77,7 @@ impl Crossover for Vec<f32> {
     fn crossover(a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32> {
         let mut c_0: Vec<f32> = Vec::with_capacity(a.capacity());
         for i in 0..a.len() {
-            let x = f32::crossover(a[i], b[i], u32::create_bit_mask(3));
+            let x = f32::crossover(a[i], b[i], u32::create_bit_mask(6));
             c_0.push(x);
         }
         c_0

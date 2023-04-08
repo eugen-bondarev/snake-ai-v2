@@ -45,7 +45,7 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
 
 fn main() {
     // let mut snakes: Vec<Snake> = vec![Snake::new()];
-    let capacity = 1000;
+    let capacity = 5000;
     let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
     for _ in 0..capacity {
         snakes.push(Snake::new());
@@ -93,7 +93,7 @@ fn main() {
 
         if alive_snakes_num == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..10].to_vec();
+            let mut slice = snakes[0..100].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
