@@ -27,8 +27,4 @@ impl Cell {
         self.current.0 += point.0;
         self.current.1 += point.1;
     }
-
-    pub fn print(&self) {
-        println!("{0}, {1}", self.current.0, self.current.1);
-    }
 }
