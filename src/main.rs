@@ -4,6 +4,7 @@ mod snake;
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, Normal};
+use rayon::prelude::*;
 use snake::{Direction, Snake, FIELD_HEIGHT, FIELD_WIDTH};
 use std::sync::{Arc, Mutex};
 
@@ -60,8 +61,6 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
     }
 }
 
-use rayon::prelude::*;
-
 fn main() {
     let capacity = 5000;
     let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
@@ -77,7 +76,6 @@ fn main() {
     .unwrap();
 
     let mut generation = 0;
-    // let mut max = 0;
     let mut max_fitness_prev = 0;
     let mut mutation_rate = 0.01;
 
@@ -102,8 +100,8 @@ fn main() {
 
         batches.into_par_iter().for_each(|batch| {
             for item in batch {
-                if item.get_score() > *max_fitness_current.lock().unwrap() {
-                    *max_fitness_current.lock().unwrap() = item.get_score();
+                if item.get_length() > *max_fitness_current.lock().unwrap() {
+                    *max_fitness_current.lock().unwrap() = item.get_length();
                 }
                 if !item.get_is_alive() {
                     continue;
@@ -117,8 +115,6 @@ fn main() {
             if !snake.get_is_alive() {
                 continue;
             }
-
-            // snake.tick();
 
             if draw {
                 engine.set_pxl(
@@ -137,7 +133,7 @@ fn main() {
         }
 
         if *alive_snakes_num.lock().unwrap() == 0 {
-            snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
+            snakes.sort_by_key(|snake| (snake.get_length() as i32) * -1);
             let slice = snakes[0..capacity / 10].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];

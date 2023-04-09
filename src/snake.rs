@@ -25,8 +25,22 @@ pub struct Snake {
     moves_made: i32,
 }
 
-impl Snake {
-    pub fn get_nn_input(&self) -> Vec<f32> {
+trait HasFitness {
+    fn get_fitness(&self) -> f32;
+}
+
+trait HasSensors {
+    fn get_sensors(&self) -> Vec<f32>;
+}
+
+impl HasFitness for Snake {
+    fn get_fitness(&self) -> f32 {
+        self.get_length() as f32
+    }
+}
+
+impl HasSensors for Snake {
+    fn get_sensors(&self) -> Vec<f32> {
         vec![
             self.cells[0].current.1 as f32,
             (FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32),
@@ -36,9 +50,11 @@ impl Snake {
             (self.cells[0].current.1 - self.apple.current.1) as f32,
         ]
     }
+}
 
+impl Snake {
     pub fn get_nn_prediction(&mut self) -> usize {
-        let input = self.get_nn_input();
+        let input = self.get_sensors();
         let dev: Cpu = Default::default();
         let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
         x.copy_from(&input[0..input.len()]);
@@ -48,25 +64,20 @@ impl Snake {
             .max_by(|(_, a), (_, b)| a.total_cmp(b))
             .map(|(index, _)| index)
         {
-            Some(s) => s,
+            Some(v) => v,
             None => 0,
         }
+    }
+
+    pub fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
+        let mut child = Snake::new();
+        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
+        child
     }
 
     pub fn new() -> Snake {
         Snake {
             genome: Genome::new(),
-            cells: vec![Cell::init_random()],
-            apple: Cell::init_random(),
-            direction: Direction::Up,
-            is_alive: true,
-            moves_made: 0,
-        }
-    }
-
-    pub fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
-        Snake {
-            genome: Genome::crossover(&a.genome, &b.genome, mutation_rate),
             cells: vec![Cell::init_random()],
             apple: Cell::init_random(),
             direction: Direction::Up,
@@ -155,7 +166,7 @@ impl Snake {
         &self.apple
     }
 
-    pub fn get_score(&self) -> usize {
+    pub fn get_length(&self) -> usize {
         self.cells.len() - 1
     }
 }
