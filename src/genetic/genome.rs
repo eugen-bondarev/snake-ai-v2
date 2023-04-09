@@ -3,7 +3,7 @@ use dfdx::{
     tensor::Cpu,
 };
 
-use super::algorithms::Crossover;
+use super::algorithms::GeneticCrossover;
 
 type Activation = ReLU;
 
