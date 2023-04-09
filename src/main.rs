@@ -77,7 +77,7 @@ fn main() {
     .unwrap();
 
     let mut generation = 0;
-    let mut max = 0;
+    // let mut max = 0;
     let mut max_fitness_prev = 0;
     let mut mutation_rate = 0.01;
 
@@ -134,16 +134,17 @@ fn main() {
                     );
                 }
             }
-            // alive_snakes_num += 1;
         }
 
         if *alive_snakes_num.lock().unwrap() == 0 {
             snakes.sort_by_key(|snake| (snake.get_score() as i32) * -1);
-            let mut slice = snakes[0..capacity / 10].to_vec();
+            let slice = snakes[0..capacity / 10].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
             let progress = *max_fitness_current.lock().unwrap() > max_fitness_prev;
+            max_fitness_prev = *max_fitness_current.lock().unwrap();
+
             if progress {
                 mutation_rate -= mutation_rate * 0.1;
             } else {
@@ -151,7 +152,7 @@ fn main() {
             }
             mutation_rate = f64::clamp(mutation_rate, 0.00005 as f64, 0.05 as f64);
 
-            for i in (0..capacity).step_by(2) {
+            for _ in (0..capacity).step_by(2) {
                 let parent_a = &slice[generate_random_number_tending_towards_smaller(
                     0,
                     slice.len() as u32 - 1,
@@ -172,10 +173,6 @@ fn main() {
 
             for snake in &mut snakes {
                 snake.reborn();
-            }
-            max = slice[0].get_score();
-            if max > max_fitness_prev {
-                max_fitness_prev = max;
             }
             generation += 1;
         }

@@ -3,7 +3,7 @@ mod direction;
 
 use std::collections::HashMap;
 
-use dfdx::prelude::{DeviceBuildExt, Module, ModuleMut};
+use dfdx::prelude::Module;
 use dfdx::shapes::Rank1;
 use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
 use lazy_static::lazy_static;
@@ -27,14 +27,13 @@ pub struct Snake {
 
 impl Snake {
     pub fn get_nn_input(&self) -> Vec<f32> {
-        let foo = 1;
         vec![
-            self.cells[0].current.1 as f32 / (foo as f32),
-            (FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32) / (foo as f32),
-            self.cells[0].current.0 as f32 / (foo as f32),
-            (FIELD_WIDTH as f32 - self.cells[0].current.0 as f32) / (foo as f32),
-            (self.cells[0].current.0 - self.apple.current.0) as f32 / (foo as f32),
-            (self.cells[0].current.1 - self.apple.current.1) as f32 / (foo as f32),
+            self.cells[0].current.1 as f32,
+            (FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32),
+            self.cells[0].current.0 as f32,
+            (FIELD_WIDTH as f32 - self.cells[0].current.0 as f32),
+            (self.cells[0].current.0 - self.apple.current.0) as f32,
+            (self.cells[0].current.1 - self.apple.current.1) as f32,
         ]
     }
 
@@ -43,7 +42,6 @@ impl Snake {
         let dev: Cpu = Default::default();
         let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
         x.copy_from(&input[0..input.len()]);
-        // 0.233 0.253
         match (self.genome.neural_network.forward(x).as_vec())
             .iter()
             .enumerate()
@@ -90,12 +88,24 @@ impl Snake {
     }
 
     pub fn tick(&mut self) {
-        // if !self.is_alive {
-        //     self.reborn();
-        // }
+        lazy_static! {
+            static ref PREDICTION_DIRECTION_MAP: HashMap<usize, Direction> = vec![
+                (0, Direction::Up),
+                (1, Direction::Down),
+                (2, Direction::Left),
+                (3, Direction::Right),
+            ]
+            .into_iter()
+            .collect();
+        }
+
+        /*
+         * This seems kinda unsafe..
+         */
+        self.direction = PREDICTION_DIRECTION_MAP[&self.get_nn_prediction()];
 
         lazy_static! {
-            static ref MAP: HashMap<Direction, Point> = vec![
+            static ref DIRECTION_MOVEMENT_MAP: HashMap<Direction, Point> = vec![
                 (Direction::Up, (0, -1)),
                 (Direction::Down, (0, 1)),
                 (Direction::Left, (-1, 0)),
@@ -104,16 +114,7 @@ impl Snake {
             .into_iter()
             .collect();
         }
-
-        self.direction = match self.get_nn_prediction() {
-            x if x == 0 => Direction::Up,
-            x if x == 1 => Direction::Down,
-            x if x == 2 => Direction::Left,
-            x if x == 3 => Direction::Right,
-            _ => Direction::Up,
-        };
-
-        let matching_point = MAP[&self.direction];
+        let matching_point = DIRECTION_MOVEMENT_MAP[&self.direction];
 
         for i in 0..self.cells.len() {
             self.cells[i].prev = self.cells[i].current;
@@ -156,11 +157,5 @@ impl Snake {
 
     pub fn get_score(&self) -> usize {
         self.cells.len() - 1
-    }
-
-    pub fn print(&self) {
-        for cell in &self.cells {
-            cell.print();
-        }
     }
 }
