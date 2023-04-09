@@ -9,6 +9,7 @@ use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
 use lazy_static::lazy_static;
 
 pub use crate::genetic::genome::Genome;
+use crate::genetic::traits::{HasFitness, HasLife, HasSensors, HasTimePerception};
 pub use crate::snake::cell::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 pub use crate::snake::direction::Direction;
 
@@ -21,16 +22,8 @@ pub struct Snake {
     cells: Vec<Cell>,
     apple: Cell,
     direction: Direction,
-    is_alive: bool,
+    alive: bool,
     moves_made: i32,
-}
-
-trait HasFitness {
-    fn get_fitness(&self) -> f32;
-}
-
-trait HasSensors {
-    fn get_sensors(&self) -> Vec<f32>;
 }
 
 impl HasFitness for Snake {
@@ -52,53 +45,22 @@ impl HasSensors for Snake {
     }
 }
 
-impl Snake {
-    pub fn get_nn_prediction(&mut self) -> usize {
-        let input = self.get_sensors();
-        let dev: Cpu = Default::default();
-        let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
-        x.copy_from(&input[0..input.len()]);
-        match (self.genome.neural_network.forward(x).as_vec())
-            .iter()
-            .enumerate()
-            .max_by(|(_, a), (_, b)| a.total_cmp(b))
-            .map(|(index, _)| index)
-        {
-            Some(v) => v,
-            None => 0,
-        }
+impl HasLife for Snake {
+    fn is_alive(&self) -> bool {
+        self.alive
     }
 
-    pub fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
-        let mut child = Snake::new();
-        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
-        child
-    }
-
-    pub fn new() -> Snake {
-        Snake {
-            genome: Genome::new(),
-            cells: vec![Cell::init_random()],
-            apple: Cell::init_random(),
-            direction: Direction::Up,
-            is_alive: true,
-            moves_made: 0,
-        }
-    }
-
-    pub fn reborn(&mut self) {
+    fn reborn(&mut self) {
         self.cells = vec![Cell::init_random()];
         self.direction = Direction::Up;
-        self.is_alive = true;
+        self.alive = true;
         self.apple = Cell::init_random();
         self.moves_made = 0;
     }
+}
 
-    pub fn get_is_alive(&self) -> bool {
-        self.is_alive
-    }
-
-    pub fn tick(&mut self) {
+impl HasTimePerception for Snake {
+    fn tick(&mut self) {
         lazy_static! {
             static ref PREDICTION_DIRECTION_MAP: HashMap<usize, Direction> = vec![
                 (0, Direction::Up),
@@ -136,7 +98,7 @@ impl Snake {
 
         self.cells[0].add(&matching_point);
 
-        self.is_alive = self.moves_made < 100
+        self.alive = self.moves_made < 100
             && self.cells[0].current.0 >= 0
             && self.cells[0].current.0 < FIELD_WIDTH.into()
             && self.cells[0].current.1 >= 0
@@ -152,6 +114,41 @@ impl Snake {
         }
 
         self.moves_made += 1;
+    }
+}
+
+impl Snake {
+    pub fn get_nn_prediction(&mut self) -> usize {
+        let input = self.get_sensors();
+        let dev: Cpu = Default::default();
+        let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
+        x.copy_from(&input[0..input.len()]);
+        match (self.genome.neural_network.forward(x).as_vec())
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.total_cmp(b))
+            .map(|(index, _)| index)
+        {
+            Some(v) => v,
+            None => 0,
+        }
+    }
+
+    pub fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
+        let mut child = Snake::new();
+        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
+        child
+    }
+
+    pub fn new() -> Snake {
+        Snake {
+            genome: Genome::new(),
+            cells: vec![Cell::init_random()],
+            apple: Cell::init_random(),
+            direction: Direction::Up,
+            alive: true,
+            moves_made: 0,
+        }
     }
 
     pub fn set_direction(&mut self, direction: Direction) {
