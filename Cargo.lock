@@ -394,6 +394,7 @@ dependencies = [
  "console_engine",
  "dfdx",
  "lazy_static",
+ "num_cpus",
  "rand",
  "rand_distr",
  "rayon",

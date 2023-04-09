@@ -1,19 +1,11 @@
 mod genetic;
 mod snake;
 
-use std::{
-    sync::{Arc, Mutex},
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
-
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
-use dfdx::{
-    prelude::{DeviceBuildExt, Linear, Module, ModuleMut, Sigmoid},
-    shapes::Rank1,
-    tensor::{Cpu, Tensor, ZerosTensor},
-};
 use rand::{thread_rng, Rng};
+use rand_distr::{Distribution, Normal};
 use snake::{Direction, Snake, FIELD_HEIGHT, FIELD_WIDTH};
+use std::sync::{Arc, Mutex};
 
 fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
     let border_color = Color::DarkRed;
@@ -45,8 +37,6 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
         );
     }
 }
-
-use rand_distr::{Distribution, Normal};
 
 fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likelihood: f64) -> u32 {
     let mean = (n + m) / 2;
@@ -103,9 +93,7 @@ fn main() {
             draw_borders(&mut engine, shift);
         }
 
-        // let mut alive_snakes_num = 0;
-
-        let batch_size = snakes.len() / 8;
+        let batch_size = snakes.len() / num_cpus::get();
         let batches: Vec<_> = snakes.chunks_mut(batch_size).collect();
 
         let max_fitness_current = Arc::new(Mutex::new(0));
