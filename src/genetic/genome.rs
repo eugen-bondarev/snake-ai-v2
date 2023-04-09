@@ -7,6 +7,9 @@ use super::algorithms::GeneticCrossover;
 
 type Activation = ReLU;
 
+/**
+ * Code smell
+ */
 type Model = ((Linear<6, 4>, Activation), Linear<4, 4>);
 type InitializedModel = (
     (modules::Linear<6, 4, f32, Cpu>, Activation),

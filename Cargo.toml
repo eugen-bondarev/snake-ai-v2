@@ -7,9 +7,6 @@ edition = "2021"
 
 [dependencies]
 rand = "*"
-crossterm = "*"
-colored = "*"
-drawille = "*"
 console_engine = "*"
 lazy_static = "*"
 dfdx = "*"
