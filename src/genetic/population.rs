@@ -1,9 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use super::{
-    genome,
-    traits::{HasFitness, HasGenes, HasLife, HasTimePerception},
-};
+use super::traits::{HasFitness, HasGenes, HasLife, HasTimePerception};
 
 use rayon::prelude::*;
 

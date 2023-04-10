@@ -1,8 +1,6 @@
 mod genetic;
 mod snake;
 
-use std::thread;
-
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
 use genetic::{population::Population, traits::HasLife};
 use snake::{Snake, FIELD_HEIGHT, FIELD_WIDTH};
