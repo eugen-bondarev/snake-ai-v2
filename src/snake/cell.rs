@@ -6,7 +6,7 @@ use rand::Rng;
 pub static FIELD_WIDTH: u8 = 32;
 pub static FIELD_HEIGHT: u8 = 32;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Cell {
     pub current: Point,
     pub prev: Point,

@@ -15,7 +15,7 @@ pub use crate::snake::direction::Direction;
 
 use self::cell::Cell;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Snake {
     genome: Genome,
 

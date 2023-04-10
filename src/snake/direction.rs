@@ -5,3 +5,9 @@ pub enum Direction {
     Left,
     Right,
 }
+
+impl Default for Direction {
+    fn default() -> Self {
+        Direction::Up
+    }
+}

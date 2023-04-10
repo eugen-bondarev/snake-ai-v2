@@ -2,11 +2,14 @@ mod genetic;
 mod snake;
 
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
-use genetic::traits::{HasFitness, HasLife, HasTimePerception};
+use genetic::{
+    population::Population,
+    traits::{HasFitness, HasLife, HasTimePerception},
+};
 use rand::{thread_rng, Rng};
 use rand_distr::{Distribution, Normal};
 use rayon::prelude::*;
-use snake::{Direction, Snake, FIELD_HEIGHT, FIELD_WIDTH};
+use snake::{Snake, FIELD_HEIGHT, FIELD_WIDTH};
 use std::sync::{Arc, Mutex};
 
 fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
@@ -67,11 +70,8 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
 }
 
 fn main() {
-    let capacity = 2000;
-    let mut snakes: Vec<Snake> = Vec::with_capacity(capacity);
-    for _ in 0..capacity {
-        snakes.push(Snake::new());
-    }
+    let mut population: Population<Snake> = Population::new(2000);
+
     let status_bar_height = 8;
     let mut engine = ConsoleEngine::init(
         (FIELD_WIDTH + 4 + 60).into(),
@@ -99,8 +99,8 @@ fn main() {
         let max_fitness_current = Arc::new(Mutex::<f32>::new(0.0));
         let alive_snakes_num = Arc::new(Mutex::new(0));
 
-        let batch_size = snakes.len() / num_cpus::get();
-        let batches: Vec<_> = snakes.chunks_mut(batch_size).collect();
+        let batch_size = population.get_genomes().len() / num_cpus::get();
+        let batches: Vec<_> = population.get_genomes().chunks_mut(batch_size).collect();
 
         batches.into_par_iter().for_each(|batch| {
             for item in batch {
@@ -115,7 +115,7 @@ fn main() {
             }
         });
 
-        for snake in &mut snakes {
+        for snake in &mut population.get_genomes().iter() {
             if !snake.is_alive() {
                 continue;
             }
@@ -137,8 +137,11 @@ fn main() {
         }
 
         if *alive_snakes_num.lock().unwrap() == 0 {
-            snakes.sort_by_key(|snake| (snake.get_fitness() as i32) * -1);
-            let slice = snakes[0..capacity / 10].to_vec();
+            population
+                .get_genomes()
+                .sort_by_key(|snake| (snake.get_fitness() as i32) * -1);
+            let capacity = population.get_capacity();
+            let slice = population.get_genomes()[0..capacity / 10].to_vec();
 
             let mut new_population: Vec<Snake> = vec![];
 
@@ -152,7 +155,7 @@ fn main() {
             }
             mutation_rate = f64::clamp(mutation_rate, 0.00005 as f64, 0.05 as f64);
 
-            for _ in (0..capacity).step_by(2) {
+            for _ in (0..population.get_capacity()).step_by(2) {
                 let parent_a = &slice[generate_random_number_tending_towards_smaller(
                     0,
                     slice.len() as u32 - 1,
@@ -166,14 +169,12 @@ fn main() {
                 new_population.push(Snake::crossover(&parent_a, &parent_b, mutation_rate));
             }
 
-            snakes.clear();
+            population.get_genomes().clear();
             for snake in new_population {
-                snakes.push(snake);
+                population.get_genomes().push(snake);
             }
 
-            for snake in &mut snakes {
-                snake.reborn();
-            }
+            population.reborn();
             generation += 1;
         }
 
@@ -199,22 +200,6 @@ fn main() {
             4,
             format!("max_fitness_prev: {}", max_fitness_prev).as_str(),
         );
-
-        if engine.is_key_pressed(KeyCode::Char('d')) {
-            snakes[0].set_direction(Direction::Right);
-        }
-
-        if engine.is_key_pressed(KeyCode::Char('a')) {
-            snakes[0].set_direction(Direction::Left);
-        }
-
-        if engine.is_key_pressed(KeyCode::Char('w')) {
-            snakes[0].set_direction(Direction::Up);
-        }
-
-        if engine.is_key_pressed(KeyCode::Char('s')) {
-            snakes[0].set_direction(Direction::Down);
-        }
 
         if engine.is_key_pressed(KeyCode::Char(' ')) {
             draw = !draw;

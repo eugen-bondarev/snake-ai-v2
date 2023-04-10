@@ -21,11 +21,17 @@ pub struct Genome {
     pub neural_network: InitializedModel,
 }
 
-impl Genome {
-    pub fn new() -> Genome {
+impl Default for Genome {
+    fn default() -> Self {
         let dev: Cpu = Default::default();
         let neural_network = dev.build_module::<Model, f32>();
         Genome { neural_network }
+    }
+}
+
+impl Genome {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /**
