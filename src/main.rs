@@ -80,10 +80,6 @@ fn main() {
     )
     .unwrap();
 
-    // let mut generation = 0;
-    // let mut max_fitness_prev = 0.0;
-    // let mut mutation_rate = 0.01;
-
     let mut draw = true;
 
     loop {
@@ -164,6 +160,10 @@ fn main() {
 
         if engine.is_key_pressed(KeyCode::Esc) {
             break;
+        }
+
+        if engine.is_key_pressed(KeyCode::Char('q')) {
+            population.kill();
         }
 
         engine.draw();

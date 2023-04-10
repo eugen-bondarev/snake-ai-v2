@@ -1,6 +1,9 @@
 use std::sync::{Arc, Mutex};
 
-use super::traits::{HasFitness, HasGenes, HasLife, HasTimePerception};
+use super::{
+    genome,
+    traits::{HasFitness, HasGenes, HasLife, HasTimePerception},
+};
 
 use rayon::prelude::*;
 
@@ -63,6 +66,12 @@ where
     pub fn reborn(&mut self) {
         for genome in &mut self.genomes {
             genome.reborn();
+        }
+    }
+
+    pub fn kill(&mut self) {
+        for genome in &mut self.genomes {
+            genome.kill();
         }
     }
 

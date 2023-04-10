@@ -57,6 +57,10 @@ impl HasLife for Snake {
         self.apple = Cell::init_random();
         self.moves_made = 0;
     }
+
+    fn kill(&mut self) {
+        self.moves_made = 100;
+    }
 }
 
 impl HasTimePerception for Snake {
@@ -151,10 +155,6 @@ impl Snake {
             alive: true,
             moves_made: 0,
         }
-    }
-
-    pub fn set_direction(&mut self, direction: Direction) {
-        self.direction = direction;
     }
 
     pub fn get_cells(&self) -> &Vec<Cell> {

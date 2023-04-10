@@ -14,6 +14,8 @@ pub trait HasLife {
     fn is_alive(&self) -> bool;
 
     fn reborn(&mut self);
+
+    fn kill(&mut self);
 }
 
 pub trait HasTimePerception {
