@@ -9,7 +9,7 @@ use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
 use lazy_static::lazy_static;
 
 pub use crate::genetic::genome::Genome;
-use crate::genetic::traits::{HasFitness, HasLife, HasSensors, HasTimePerception};
+use crate::genetic::traits::{HasFitness, HasGenes, HasLife, HasSensors, HasTimePerception};
 pub use crate::snake::cell::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 pub use crate::snake::direction::Direction;
 
@@ -117,6 +117,14 @@ impl HasTimePerception for Snake {
     }
 }
 
+impl HasGenes<Snake> for Snake {
+    fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
+        let mut child = Snake::new();
+        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
+        child
+    }
+}
+
 impl Snake {
     pub fn get_nn_prediction(&mut self) -> usize {
         let input = self.get_sensors();
@@ -132,12 +140,6 @@ impl Snake {
             Some(v) => v,
             None => 0,
         }
-    }
-
-    pub fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
-        let mut child = Snake::new();
-        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
-        child
     }
 
     pub fn new() -> Snake {

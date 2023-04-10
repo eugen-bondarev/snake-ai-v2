@@ -80,9 +80,9 @@ fn main() {
     )
     .unwrap();
 
-    let mut generation = 0;
-    let mut max_fitness_prev = 0.0;
-    let mut mutation_rate = 0.01;
+    // let mut generation = 0;
+    // let mut max_fitness_prev = 0.0;
+    // let mut mutation_rate = 0.01;
 
     let mut draw = true;
 
@@ -96,67 +96,10 @@ fn main() {
             draw_borders(&mut engine, shift);
         }
 
-        // let max_fitness_current = Arc::new(Mutex::<f32>::new(0.0));
-        // let alive_snakes_num = Arc::new(Mutex::new(0));
-
         population.tick();
 
-        // let batch_size = population.get_genomes().len() / num_cpus::get();
-        // let batches: Vec<_> = population.get_genomes().chunks_mut(batch_size).collect();
-
-        // batches.into_par_iter().for_each(|batch| {
-        //     for item in batch {
-        //         if item.get_fitness() > *max_fitness_current.lock().unwrap() {
-        //             *max_fitness_current.lock().unwrap() = item.get_fitness();
-        //         }
-        //         if !item.is_alive() {
-        //             continue;
-        //         }
-        //         item.tick();
-        //         *alive_snakes_num.lock().unwrap() += 1;
-        //     }
-        // });
-
-        if *population.alive_genomes_count.lock().unwrap() == 0 {
-            population
-                .get_genomes()
-                .sort_by_key(|snake| (snake.get_fitness() as i32) * -1);
-            let capacity = population.get_capacity();
-            let slice = population.get_genomes()[0..capacity / 10].to_vec();
-
-            let mut new_population: Vec<Snake> = vec![];
-
-            let progress = *population.max_fitness_current.lock().unwrap() > max_fitness_prev;
-            max_fitness_prev = *population.max_fitness_current.lock().unwrap();
-
-            if progress {
-                mutation_rate -= mutation_rate * 0.1;
-            } else {
-                mutation_rate += mutation_rate * 0.1;
-            }
-            mutation_rate = f64::clamp(mutation_rate, 0.00005 as f64, 0.05 as f64);
-
-            for _ in (0..population.get_capacity()).step_by(2) {
-                let parent_a = &slice[generate_random_number_tending_towards_smaller(
-                    0,
-                    slice.len() as u32 - 1,
-                    0.9,
-                ) as usize];
-                let parent_b = &slice[generate_random_number_tending_towards_smaller(
-                    0,
-                    slice.len() as u32 - 1,
-                    0.9,
-                ) as usize];
-                new_population.push(Snake::crossover(&parent_a, &parent_b, mutation_rate));
-            }
-
-            population.get_genomes().clear();
-            for snake in new_population {
-                population.get_genomes().push(snake);
-            }
-
-            population.reborn();
-            generation += 1;
+        if population.is_dead() {
+            population.evolution();
         }
 
         for snake in &mut population.get_genomes().iter() {
@@ -190,8 +133,16 @@ fn main() {
             .as_str(),
         );
 
-        engine.print(1, 1, format!("generation: {}", generation,).as_str());
-        engine.print(1, 2, format!("mutation_rate: {}", mutation_rate).as_str());
+        engine.print(
+            1,
+            1,
+            format!("generation: {}", population.generation,).as_str(),
+        );
+        engine.print(
+            1,
+            2,
+            format!("mutation_rate: {}", population.mutation_rate).as_str(),
+        );
         engine.print(
             1,
             3,
@@ -204,7 +155,7 @@ fn main() {
         engine.print(
             1,
             4,
-            format!("max_fitness_prev: {}", max_fitness_prev).as_str(),
+            format!("max_fitness_prev: {}", population.max_fitness_prev).as_str(),
         );
 
         if engine.is_key_pressed(KeyCode::Char(' ')) {
