@@ -166,6 +166,6 @@ impl Snake {
     }
 
     pub fn get_length(&self) -> usize {
-        self.cells.len() - 1
+        self.cells.len()
     }
 }
