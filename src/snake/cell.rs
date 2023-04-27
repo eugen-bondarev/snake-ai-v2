@@ -11,7 +11,6 @@ pub const FIELD_HEIGHT: u8 = 32;
 #[derive(Clone, Default)]
 pub struct Cell {
     pub current: Point,
-    pub prev: Point,
 }
 
 impl Cell {
@@ -21,12 +20,14 @@ impl Cell {
                 rand::thread_rng().gen_range(0..FIELD_WIDTH).into(),
                 rand::thread_rng().gen_range(0..FIELD_HEIGHT).into(),
             ),
-            prev: (0, 0),
         }
     }
 
-    pub fn add(&mut self, point: &Point) {
-        self.current.0 += point.0;
-        self.current.1 += point.1;
+    pub fn new((x, y): Point) -> Cell {
+        Cell { current: (x, y) }
+    }
+
+    pub fn add(&self, point: &Point) -> Cell {
+        Cell::new((self.current.0 + point.0, self.current.1 + point.1))
     }
 }
