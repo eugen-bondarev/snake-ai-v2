@@ -125,7 +125,7 @@ impl HasTimePerception for Snake {
 impl HasGenes<Snake> for Snake {
     fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
         let mut child = Snake::new();
-        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
+        child.genome = a.genome.crossover(&b.genome, mutation_rate);
         child
     }
 }
