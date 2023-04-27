@@ -12,14 +12,12 @@ use crate::genetic::traits::{HasFitness, HasGenes, HasLife, HasSensors, HasTimeP
 pub use crate::snake::cell::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 pub use crate::snake::direction::Direction;
 
-use self::cell::Cell;
-
 #[derive(Clone, Default)]
 pub struct Snake {
     genome: Genome,
 
-    cells: VecDeque<Cell>,
-    apple: Cell,
+    cells: VecDeque<Point>,
+    apple: Point,
     direction: Direction,
     alive: bool,
     moves_made: i32,
@@ -34,12 +32,12 @@ impl HasFitness for Snake {
 impl HasSensors for Snake {
     fn get_sensors(&self) -> Vec<f32> {
         vec![
-            self.cells[0].current.1 as f32,
-            (FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32),
-            self.cells[0].current.0 as f32,
-            (FIELD_WIDTH as f32 - self.cells[0].current.0 as f32),
-            (self.cells[0].current.0 - self.apple.current.0) as f32,
-            (self.cells[0].current.1 - self.apple.current.1) as f32,
+            self.cells[0].y as f32,
+            (FIELD_HEIGHT as f32 - self.cells[0].y as f32),
+            self.cells[0].x as f32,
+            (FIELD_WIDTH as f32 - self.cells[0].x as f32),
+            (self.cells[0].x - self.apple.x) as f32,
+            (self.cells[0].y - self.apple.y) as f32,
         ]
     }
 }
@@ -50,10 +48,10 @@ impl HasLife for Snake {
     }
 
     fn reborn(&mut self) {
-        self.cells = VecDeque::from([Cell::init_random()]);
+        self.cells = VecDeque::from([Point::default()]);
         self.direction = Direction::Up;
         self.alive = true;
-        self.apple = Cell::init_random();
+        self.apple = Point::default();
         self.moves_made = 0;
     }
 
@@ -84,18 +82,18 @@ impl HasTimePerception for Snake {
         let new_head = self.cells[0].add(&self.direction.movement_vector());
         self.cells.push_front(new_head);
 
-        if self.apple.current == self.cells[0].current {
-            self.apple = Cell::init_random();
+        if self.apple == self.cells[0] {
+            self.apple = Point::default();
             self.moves_made = 0;
         } else {
             self.cells.pop_back();
         }
 
         self.alive = self.moves_made < 100
-            && self.cells[0].current.0 >= 0
-            && self.cells[0].current.0 < FIELD_WIDTH.into()
-            && self.cells[0].current.1 >= 0
-            && self.cells[0].current.1 < FIELD_HEIGHT.into();
+            && self.cells[0].x >= 0
+            && self.cells[0].x < FIELD_WIDTH.into()
+            && self.cells[0].y >= 0
+            && self.cells[0].y < FIELD_HEIGHT.into();
 
         self.moves_made += 1;
     }
@@ -130,19 +128,19 @@ impl Snake {
     pub fn new() -> Snake {
         Snake {
             genome: Genome::new(),
-            cells: VecDeque::from([Cell::init_random()]),
-            apple: Cell::init_random(),
+            cells: VecDeque::from([Point::default()]),
+            apple: Point::default(),
             direction: Direction::Up,
             alive: true,
             moves_made: 0,
         }
     }
 
-    pub fn get_cells(&self) -> &VecDeque<Cell> {
+    pub fn get_cells(&self) -> &VecDeque<Point> {
         &self.cells
     }
 
-    pub fn get_apple(&self) -> &Cell {
+    pub fn get_apple(&self) -> &Point {
         &self.apple
     }
 

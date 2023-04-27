@@ -9,28 +9,28 @@ fn draw_borders(canvas: &mut ConsoleEngine, shift: Point) {
     let border_color = Color::DarkRed;
     let border_pixel = pixel::pxl_bg(' ', border_color);
 
-    canvas.set_pxl(shift.0, shift.1, border_pixel);
-    canvas.set_pxl((FIELD_WIDTH + 1) as i32 + shift.0, shift.1, border_pixel);
+    canvas.set_pxl(shift.x, shift.y, border_pixel);
+    canvas.set_pxl((FIELD_WIDTH + 1) as i32 + shift.x, shift.y, border_pixel);
     canvas.set_pxl(
-        (FIELD_WIDTH + 1) as i32 + shift.0,
-        (FIELD_HEIGHT + 1) as i32 + shift.1,
+        (FIELD_WIDTH + 1) as i32 + shift.x,
+        (FIELD_HEIGHT + 1) as i32 + shift.y,
         border_pixel,
     );
-    canvas.set_pxl(shift.0, (FIELD_HEIGHT + 1) as i32 + shift.1, border_pixel);
+    canvas.set_pxl(shift.x, (FIELD_HEIGHT + 1) as i32 + shift.y, border_pixel);
 
     for x in 0..FIELD_WIDTH + 1 {
-        canvas.set_pxl(x as i32 + shift.0, shift.1, border_pixel);
+        canvas.set_pxl(x as i32 + shift.x, shift.y, border_pixel);
         canvas.set_pxl(
-            x as i32 + shift.0,
-            (FIELD_HEIGHT + 1) as i32 + shift.1,
+            x as i32 + shift.x,
+            (FIELD_HEIGHT + 1) as i32 + shift.y,
             border_pixel,
         );
     }
     for y in 0..FIELD_HEIGHT + 1 {
-        canvas.set_pxl(shift.0, y as i32 + shift.1, border_pixel);
+        canvas.set_pxl(shift.x, y as i32 + shift.y, border_pixel);
         canvas.set_pxl(
-            (FIELD_WIDTH + 1) as i32 + shift.0,
-            y as i32 + shift.1,
+            (FIELD_WIDTH + 1) as i32 + shift.x,
+            y as i32 + shift.y,
             border_pixel,
         );
     }
@@ -51,7 +51,10 @@ fn main() {
         engine.wait_frame();
         engine.clear_screen();
 
-        let shift = (1, status_bar_height as i32);
+        let shift = Point {
+            x: 1,
+            y: status_bar_height as i32,
+        };
 
         draw_borders(&mut engine, shift);
 
@@ -67,14 +70,14 @@ fn main() {
             }
 
             engine.set_pxl(
-                snake.get_apple().current.0 + 1 + shift.0,
-                snake.get_apple().current.1 + 1 + shift.1,
+                snake.get_apple().x + 1 + shift.x,
+                snake.get_apple().y + 1 + shift.y,
                 pixel::pxl_bg(' ', Color::Red),
             );
             for cell in snake.get_cells() {
                 engine.set_pxl(
-                    cell.current.0 + 1 + shift.0,
-                    cell.current.1 + 1 + shift.1,
+                    cell.x + 1 + shift.x,
+                    cell.y + 1 + shift.y,
                     pixel::pxl_bg(' ', Color::Green),
                 );
             }
