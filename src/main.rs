@@ -3,9 +3,9 @@ mod snake;
 
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
 use genetic::{population::Population, traits::HasLife};
-use snake::{Snake, FIELD_HEIGHT, FIELD_WIDTH};
+use snake::{Point, Snake, FIELD_HEIGHT, FIELD_WIDTH};
 
-fn draw_borders(canvas: &mut ConsoleEngine, shift: (i32, i32)) {
+fn draw_borders(canvas: &mut ConsoleEngine, shift: Point) {
     let border_color = Color::DarkRed;
     let border_pixel = pixel::pxl_bg(' ', border_color);
 

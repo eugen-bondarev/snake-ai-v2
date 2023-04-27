@@ -1,3 +1,5 @@
+use super::Point;
+
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Direction {
     Up,
@@ -13,7 +15,7 @@ impl Default for Direction {
 }
 
 impl Direction {
-    pub fn movement_vector(&self) -> (i32, i32) {
+    pub fn movement_vector(&self) -> Point {
         match self {
             Direction::Up => (0, -1),
             Direction::Down => (0, 1),
