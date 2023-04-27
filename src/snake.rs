@@ -1,12 +1,9 @@
 mod cell;
 mod direction;
 
-use std::collections::HashMap;
-
 use dfdx::prelude::Module;
 use dfdx::shapes::Rank1;
 use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
-use lazy_static::lazy_static;
 
 pub use crate::genetic::genome::Genome;
 use crate::genetic::traits::{HasFitness, HasGenes, HasLife, HasSensors, HasTimePerception};
@@ -65,33 +62,37 @@ impl HasLife for Snake {
 
 impl HasTimePerception for Snake {
     fn tick(&mut self) {
-        lazy_static! {
-            static ref PREDICTION_DIRECTION_MAP: HashMap<usize, Direction> = vec![
-                (0, Direction::Up),
-                (1, Direction::Down),
-                (2, Direction::Left),
-                (3, Direction::Right),
-            ]
-            .into_iter()
-            .collect();
-        }
-
         /*
-         * This seems kinda unsafe..
+         * This seemed kinda unsafe..
+         *
+         * It will panic, if self.get_nn_prediction() returns a value that is out of bounds of the PREDICTION_DIRECTION_MAP.
+         * That makes it safe.
+         *
+         * Previous solution for reference:
+         *
+         *   static ref PREDICTION_DIRECTION_MAP: HashMap<usize, Direction> = vec![
+         *       (0, Direction::Up),
+         *       (1, Direction::Down),
+         *       (2, Direction::Left),
+         *       (3, Direction::Right),
+         *   ]
+         *   .into_iter()
+         *   .collect();
+         *
+         *   self.direction = PREDICTION_DIRECTION_MAP[&self.get_nn_prediction()];
          */
-        self.direction = PREDICTION_DIRECTION_MAP[&self.get_nn_prediction()];
+        self.direction = match &self.get_nn_prediction() {
+            0 => Direction::Up,
+            1 => Direction::Down,
+            2 => Direction::Left,
+            3 => Direction::Right,
+            _ => panic!(
+                "Cannot convert {} to a direction.",
+                &self.get_nn_prediction()
+            ),
+        };
 
-        lazy_static! {
-            static ref DIRECTION_MOVEMENT_MAP: HashMap<Direction, Point> = vec![
-                (Direction::Up, (0, -1)),
-                (Direction::Down, (0, 1)),
-                (Direction::Left, (-1, 0)),
-                (Direction::Right, (1, 0)),
-            ]
-            .into_iter()
-            .collect();
-        }
-        let matching_point = DIRECTION_MOVEMENT_MAP[&self.direction];
+        let matching_point = self.direction.movement_vector();
 
         for i in 0..self.cells.len() {
             self.cells[i].prev = self.cells[i].current;
