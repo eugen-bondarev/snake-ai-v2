@@ -3,8 +3,10 @@ mod point;
 pub use point::Point;
 use rand::Rng;
 
-pub static FIELD_WIDTH: u8 = 32;
-pub static FIELD_HEIGHT: u8 = 32;
+// const is usually better than static because it will always get inlined.
+// https://stackoverflow.com/a/65475478
+pub const FIELD_WIDTH: u8 = 32;
+pub const FIELD_HEIGHT: u8 = 32;
 
 #[derive(Clone, Default)]
 pub struct Cell {
