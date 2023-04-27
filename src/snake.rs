@@ -79,7 +79,7 @@ impl HasTimePerception for Snake {
         // Iterators also usually result in more efficient code than loops, because the compiler is better at optimizing them.
         // The rust course at my university had some great workshop exercises on iterators, I will attach them to my email.
 
-        let new_head = self.cells[0].add(&self.direction.movement_vector());
+        let new_head = self.cells[0] + self.direction.movement_vector();
         self.cells.push_front(new_head);
 
         if self.apple == self.cells[0] {

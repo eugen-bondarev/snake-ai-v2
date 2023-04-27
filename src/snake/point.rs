@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use rand::Rng;
 
 // const is usually better than static because it will always get inlined.
@@ -39,12 +41,18 @@ impl Default for Point {
     }
 }
 
-impl Point {
-    // `::new` method was useless because it is trivial. Using `Point{ x: 92, y: 21 }` instead
+// Implementing the Add trait is more ergonomic than implementing a custom add function.
+//
+// Interestingly the example used for the Add trait is also a Point, so this is literally the example from the docs.
+// https://doc.rust-lang.org/std/ops/trait.Add.html#addable-points
+//
+// Maybe it would be better to implement Add for &Point so we can also add refs.
+// I have not tried it but I think it should work.
+impl Add for Point {
+    type Output = Self;
 
-    /// Creates a new point from the coordinates of the given point plus the given offset.
-    pub fn add(&self, other: &Point) -> Point {
-        Point {
+    fn add(self, other: Self) -> Self {
+        Self {
             x: self.x + other.x,
             y: self.y + other.y,
         }
