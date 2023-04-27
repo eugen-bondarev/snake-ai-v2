@@ -1,5 +1,5 @@
-mod cell;
 mod direction;
+mod point;
 
 use std::collections::VecDeque;
 
@@ -9,8 +9,8 @@ use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
 
 pub use crate::genetic::genome::Genome;
 use crate::genetic::traits::{HasFitness, HasGenes, HasLife, HasSensors, HasTimePerception};
-pub use crate::snake::cell::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 pub use crate::snake::direction::Direction;
+pub use crate::snake::point::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 
 #[derive(Clone, Default)]
 pub struct Snake {

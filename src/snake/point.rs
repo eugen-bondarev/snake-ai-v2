@@ -1,6 +1,9 @@
 use rand::Rng;
 
-use super::{FIELD_HEIGHT, FIELD_WIDTH};
+// const is usually better than static because it will always get inlined.
+// https://stackoverflow.com/a/65475478
+pub const FIELD_WIDTH: u8 = 32;
+pub const FIELD_HEIGHT: u8 = 32;
 
 /// A point in a 2D space.
 //
@@ -37,10 +40,12 @@ impl Default for Point {
 }
 
 impl Point {
+    /// Creates a new point with the given coordinates.
     pub fn new(x: i32, y: i32) -> Point {
         Point { x, y }
     }
 
+    /// Creates a new point from the coordinates of the given point plus the given offset.
     pub fn add(&self, other: &Point) -> Point {
         Point::new(self.x + other.x, self.y + other.y)
     }
