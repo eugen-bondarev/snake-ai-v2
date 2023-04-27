@@ -40,13 +40,13 @@ impl Default for Point {
 }
 
 impl Point {
-    /// Creates a new point with the given coordinates.
-    pub fn new(x: i32, y: i32) -> Point {
-        Point { x, y }
-    }
+    // `::new` method was useless because it is trivial. Using `Point{ x: 92, y: 21 }` instead
 
     /// Creates a new point from the coordinates of the given point plus the given offset.
     pub fn add(&self, other: &Point) -> Point {
-        Point::new(self.x + other.x, self.y + other.y)
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
     }
 }
