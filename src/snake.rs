@@ -135,16 +135,17 @@ impl Snake {
         let input = self.get_sensors();
         let dev: Cpu = Default::default();
         let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
-        x.copy_from(&input[0..input.len()]);
-        match (self.genome.neural_network.forward(x).as_vec())
+        // Added as_slice and unwrap_or
+        x.copy_from(input.as_slice());
+        self.genome
+            .neural_network
+            .forward(x)
+            .as_vec()
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.total_cmp(b))
             .map(|(index, _)| index)
-        {
-            Some(v) => v,
-            None => 0,
-        }
+            .unwrap_or(0)
     }
 
     pub fn new() -> Snake {
