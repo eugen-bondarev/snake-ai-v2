@@ -66,13 +66,6 @@ impl<T: Organism> Population<T> {
     }
 
     pub fn tick(&mut self) {
-        self.max_fitness_current = 0.0;
-        self.alive_genomes_count = 0;
-
-        // Not sure if we need to split in chunks or if rayon can handle it anyway
-        let batch_size = self.genomes.len() / num_cpus::get();
-        let batches: Vec<_> = self.genomes.chunks_mut(batch_size).collect();
-
         struct TickResult {
             best_fitness: f32,
             survivors: usize,
@@ -81,26 +74,26 @@ impl<T: Organism> Population<T> {
         // Rayon parallel iter => nice
         //
         // I refactored it to use map so we dont need to use a mutex
-        let tick_result = batches
-            .into_par_iter()
-            .map(|batch| {
-                batch.iter_mut().fold(
-                    TickResult {
-                        best_fitness: 0f32,
+        //
+        // Removed batches as rayon handles it anyways. I think that sped up the process a bit, but did no real benchmarking
+        //
+        // Even without batching rayon creates only 20 threads on my computer, so I think we are fine
+        let tick_result = self
+            .genomes
+            .par_iter_mut()
+            .map(|organism| {
+                if !organism.is_alive() {
+                    return TickResult {
+                        best_fitness: 0.0,
                         survivors: 0,
-                    },
-                    |result, organism| {
-                        if !organism.is_alive() {
-                            return result;
-                        }
-                        organism.tick();
-                        let organism_fitness = organism.get_fitness();
-                        TickResult {
-                            best_fitness: result.best_fitness.max(organism_fitness),
-                            survivors: result.survivors + 1,
-                        }
-                    },
-                )
+                    };
+                }
+                organism.tick();
+                let organism_fitness = organism.get_fitness();
+                TickResult {
+                    best_fitness: organism_fitness,
+                    survivors: 1,
+                }
             })
             .reduce(
                 || TickResult {
