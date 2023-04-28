@@ -23,15 +23,13 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
     let std_dev = (m - n) / 4;
     let normal = Normal::new(mean as f64, std_dev as f64).unwrap();
 
-    let mut rng = thread_rng();
-    let mut num;
-    loop {
-        num = normal.sample(&mut rng) as u32;
-        if num >= n && num <= m {
-            break;
-        }
-    }
+    let num = normal
+        .sample_iter(thread_rng())
+        .map(|x| x as u32)
+        .find(|sample| sample >= &n && sample <= &m)
+        .unwrap_or(0u32);
 
+    let mut rng = thread_rng();
     let rand_num = rng.gen_range(0.0..1.0);
     if rand_num <= small_likelihood {
         n + rng.gen_range(0..(num - n).max(1))
@@ -43,9 +41,9 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
 impl<T: Organism> Population<T> {
     pub fn new(capacity: usize) -> Self {
         let mut genomes: Vec<T> = Vec::with_capacity(capacity);
-        for _ in 0..capacity {
+        (0..capacity).for_each(|_| {
             genomes.push(Default::default());
-        }
+        });
         Population {
             genomes,
             capacity,
@@ -58,15 +56,15 @@ impl<T: Organism> Population<T> {
     }
 
     pub fn reborn(&mut self) {
-        for genome in &mut self.genomes {
+        self.genomes.iter_mut().for_each(|genome| {
             genome.reborn();
-        }
+        });
     }
 
     pub fn kill(&mut self) {
-        for genome in &mut self.genomes {
+        self.genomes.iter_mut().for_each(|genome| {
             genome.kill();
-        }
+        });
     }
 
     pub fn tick(&mut self) {
@@ -76,17 +74,18 @@ impl<T: Organism> Population<T> {
         let batch_size = self.genomes.len() / num_cpus::get();
         let batches: Vec<_> = self.genomes.chunks_mut(batch_size).collect();
 
+        // Rayon parallel iter => nice
         batches.into_par_iter().for_each(|batch| {
-            for item in batch {
+            batch.iter_mut().for_each(|item| {
                 if item.get_fitness() > *self.max_fitness_current.lock().unwrap() {
                     *self.max_fitness_current.lock().unwrap() = item.get_fitness();
                 }
                 if !item.is_alive() {
-                    continue;
+                    return;
                 }
                 item.tick();
                 *self.alive_genomes_count.lock().unwrap() += 1;
-            }
+            })
         });
     }
 
@@ -112,7 +111,7 @@ impl<T: Organism> Population<T> {
         }
         self.mutation_rate = f64::clamp(self.mutation_rate, 0.00005 as f64, 0.05 as f64);
 
-        for _ in (0..self.get_capacity()).step_by(2) {
+        (0..self.get_capacity()).step_by(2).for_each(|_| {
             let parent_a = &slice[generate_random_number_tending_towards_smaller(
                 0,
                 slice.len() as u32 - 1,
@@ -123,13 +122,13 @@ impl<T: Organism> Population<T> {
                 slice.len() as u32 - 1,
                 0.9,
             ) as usize];
-            new_population.push(T::crossover(&parent_a, &parent_b, self.mutation_rate));
-        }
+            new_population.push(parent_a.crossover(&parent_b, self.mutation_rate));
+        });
 
         self.get_genomes().clear();
-        for snake in new_population {
+        new_population.into_iter().for_each(|snake| {
             self.get_genomes().push(snake);
-        }
+        });
 
         self.reborn();
         self.generation += 1;
