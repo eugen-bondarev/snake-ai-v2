@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use super::organism::Organism;
 
 use rayon::prelude::*;
@@ -7,8 +5,8 @@ use rayon::prelude::*;
 pub struct Population<T> {
     capacity: usize,
     genomes: Vec<T>,
-    pub alive_genomes_count: Arc<Mutex<usize>>,
-    pub max_fitness_current: Arc<Mutex<f32>>,
+    pub alive_genomes_count: usize,
+    pub max_fitness_current: f32,
 
     pub generation: usize,
     pub max_fitness_prev: f32,
@@ -47,8 +45,8 @@ impl<T: Organism> Population<T> {
         Population {
             genomes,
             capacity,
-            alive_genomes_count: Arc::new(Mutex::new(0)),
-            max_fitness_current: Arc::new(Mutex::new(0.0)),
+            alive_genomes_count: 0,
+            max_fitness_current: 0.0,
             mutation_rate: 0.01,
             generation: 0,
             max_fitness_prev: 0.0,
@@ -68,29 +66,59 @@ impl<T: Organism> Population<T> {
     }
 
     pub fn tick(&mut self) {
-        self.max_fitness_current = Arc::new(Mutex::<f32>::new(0.0));
-        self.alive_genomes_count = Arc::new(Mutex::new(0));
+        self.max_fitness_current = 0.0;
+        self.alive_genomes_count = 0;
 
+        // Not sure if we need to split in chunks or if rayon can handle it anyway
         let batch_size = self.genomes.len() / num_cpus::get();
         let batches: Vec<_> = self.genomes.chunks_mut(batch_size).collect();
 
+        struct TickResult {
+            best_fitness: f32,
+            survivors: usize,
+        }
+
         // Rayon parallel iter => nice
-        batches.into_par_iter().for_each(|batch| {
-            batch.iter_mut().for_each(|item| {
-                if item.get_fitness() > *self.max_fitness_current.lock().unwrap() {
-                    *self.max_fitness_current.lock().unwrap() = item.get_fitness();
-                }
-                if !item.is_alive() {
-                    return;
-                }
-                item.tick();
-                *self.alive_genomes_count.lock().unwrap() += 1;
+        //
+        // I refactored it to use map so we dont need to use a mutex
+        let tick_result = batches
+            .into_par_iter()
+            .map(|batch| {
+                batch.iter_mut().fold(
+                    TickResult {
+                        best_fitness: 0f32,
+                        survivors: 0,
+                    },
+                    |result, organism| {
+                        if !organism.is_alive() {
+                            return result;
+                        }
+                        organism.tick();
+                        let organism_fitness = organism.get_fitness();
+                        TickResult {
+                            best_fitness: result.best_fitness.max(organism_fitness),
+                            survivors: result.survivors + 1,
+                        }
+                    },
+                )
             })
-        });
+            .reduce(
+                || TickResult {
+                    best_fitness: 0f32,
+                    survivors: 0,
+                },
+                |result, batch_result| TickResult {
+                    best_fitness: result.best_fitness.max(batch_result.best_fitness),
+                    survivors: result.survivors + batch_result.survivors,
+                },
+            );
+
+        self.max_fitness_current = tick_result.best_fitness;
+        self.alive_genomes_count = tick_result.survivors;
     }
 
     pub fn is_dead(&self) -> bool {
-        *self.alive_genomes_count.lock().unwrap() == 0
+        self.alive_genomes_count == 0
     }
 
     pub fn evolution(&mut self) {
@@ -101,8 +129,8 @@ impl<T: Organism> Population<T> {
 
         let mut new_population: Vec<T> = vec![];
 
-        let progress = *self.max_fitness_current.lock().unwrap() > self.max_fitness_prev;
-        self.max_fitness_prev = *self.max_fitness_current.lock().unwrap();
+        let progress = self.max_fitness_current > self.max_fitness_prev;
+        self.max_fitness_prev = self.max_fitness_current;
 
         if progress {
             self.mutation_rate -= self.mutation_rate * 0.1;

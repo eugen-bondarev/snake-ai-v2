@@ -86,11 +86,7 @@ fn main() {
         engine.print(
             1,
             0,
-            format!(
-                "snakes_alive: {}",
-                *population.alive_genomes_count.lock().unwrap(),
-            )
-            .as_str(),
+            format!("snakes_alive: {}", population.alive_genomes_count,).as_str(),
         );
 
         engine.print(
@@ -106,11 +102,7 @@ fn main() {
         engine.print(
             1,
             3,
-            format!(
-                "max_fitness_current: {}",
-                *population.max_fitness_current.lock().unwrap()
-            )
-            .as_str(),
+            format!("max_fitness_current: {}", population.max_fitness_current).as_str(),
         );
         engine.print(
             1,
