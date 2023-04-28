@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use super::traits::{HasFitness, HasGenes, HasLife, HasTimePerception};
+use super::organism::Organism;
 
 use rayon::prelude::*;
 
@@ -40,10 +40,7 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
     }
 }
 
-impl<T> Population<T>
-where
-    T: Clone + Sync + Send + Default + HasLife + HasFitness + HasTimePerception + HasGenes<T>,
-{
+impl<T: Organism> Population<T> {
     pub fn new(capacity: usize) -> Self {
         let mut genomes: Vec<T> = Vec::with_capacity(capacity);
         for _ in 0..capacity {

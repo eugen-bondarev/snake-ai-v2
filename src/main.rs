@@ -2,7 +2,7 @@ mod genetic;
 mod snake;
 
 use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
-use genetic::{population::Population, traits::HasLife};
+use genetic::{organism::Organism, population::Population};
 use snake::{Point, Snake, FIELD_HEIGHT, FIELD_WIDTH};
 
 fn draw_borders(canvas: &mut ConsoleEngine, shift: Point) {

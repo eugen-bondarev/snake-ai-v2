@@ -8,7 +8,7 @@ use dfdx::shapes::Rank1;
 use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
 
 pub use crate::genetic::genome::Genome;
-use crate::genetic::traits::{HasFitness, HasGenes, HasLife, HasSensors, HasTimePerception};
+use crate::genetic::organism::Organism;
 pub use crate::snake::direction::Direction;
 pub use crate::snake::point::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 
@@ -23,13 +23,11 @@ pub struct Snake {
     moves_made: i32,
 }
 
-impl HasFitness for Snake {
+impl Organism for Snake {
     fn get_fitness(&self) -> f32 {
         self.get_length() as f32
     }
-}
 
-impl HasSensors for Snake {
     fn get_sensors(&self) -> Vec<f32> {
         vec![
             self.cells[0].y as f32,
@@ -40,9 +38,7 @@ impl HasSensors for Snake {
             (self.cells[0].y - self.apple.y) as f32,
         ]
     }
-}
 
-impl HasLife for Snake {
     fn is_alive(&self) -> bool {
         self.alive
     }
@@ -58,9 +54,7 @@ impl HasLife for Snake {
     fn kill(&mut self) {
         self.moves_made = 100;
     }
-}
 
-impl HasTimePerception for Snake {
     fn tick(&mut self) {
         // I actually tried to refactor the for loop into an iterator, but with a Vec it requires a streaming/lending iterator I think.
         // While I tried to use that I somehow changed the datastructure to a deque which turns out to not need the loop at all.
@@ -87,12 +81,10 @@ impl HasTimePerception for Snake {
 
         self.moves_made += 1;
     }
-}
 
-impl HasGenes<Snake> for Snake {
-    fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
+    fn crossover(&self, b: &Snake, mutation_rate: f64) -> Snake {
         let mut child = Snake::new();
-        child.genome = a.genome.crossover(&b.genome, mutation_rate);
+        child.genome = self.genome.crossover(&b.genome, mutation_rate);
         child
     }
 }

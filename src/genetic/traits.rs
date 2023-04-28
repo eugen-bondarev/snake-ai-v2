@@ -1,23 +1,8 @@
-pub trait HasFitness {
-    fn get_fitness(&self) -> f32;
-}
-
-pub trait HasSensors {
-    fn get_sensors(&self) -> Vec<f32>;
-}
-
-pub trait HasGenes<T> {
-    fn crossover(a: &T, b: &T, mutation_rate: f64) -> T;
-}
-
-pub trait HasLife {
-    fn is_alive(&self) -> bool;
-
-    fn reborn(&mut self);
-
-    fn kill(&mut self);
-}
-
-pub trait HasTimePerception {
-    fn tick(&mut self);
-}
+// I think a module name traits is probably a sympton of to early trait creation.
+// I think it is better to create traits when you need them.
+// For now I will unify all the population traits into one trait.
+//
+// The new trait will be named `Organism` because wikipedia says:
+// _In genetics, a population is often defined as a set of organisms in which any pair of members can breed together._
+//
+//
