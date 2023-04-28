@@ -62,23 +62,13 @@ impl HasLife for Snake {
 
 impl HasTimePerception for Snake {
     fn tick(&mut self) {
-        self.direction = match &self.get_nn_prediction() {
-            0 => Direction::Up,
-            1 => Direction::Down,
-            2 => Direction::Left,
-            3 => Direction::Right,
-            _ => panic!(
-                "Cannot convert {} to a direction.",
-                &self.get_nn_prediction()
-            ),
-        };
-
         // I actually tried to refactor the for loop into an iterator, but with a Vec it requires a streaming/lending iterator I think.
         // While I tried to use that I somehow changed the datastructure to a deque which turns out to not need the loop at all.
         // If you are really motivated I can really recommend looking into rust iterators as they are quite powerful.
         // Iterators also usually result in more efficient code than loops, because the compiler is better at optimizing them.
         // The rust course at my university had some great workshop exercises on iterators, I will attach them to my email.
 
+        self.direction = self.predict_direction();
         let new_head = self.cells[0] + self.direction.movement_vector();
         self.cells.push_front(new_head);
 
@@ -108,7 +98,10 @@ impl HasGenes<Snake> for Snake {
 }
 
 impl Snake {
-    pub fn get_nn_prediction(&mut self) -> usize {
+    /// Use the neural network to predict the direction the snake should move in.
+    // This refactoring was purely because I like it more this way, it is not necessary.
+    // If this crate were a library one should definitly use Results instead of panicking.
+    pub fn predict_direction(&mut self) -> Direction {
         let input = self.get_sensors();
         let dev: Cpu = Default::default();
         let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
@@ -121,8 +114,14 @@ impl Snake {
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.total_cmp(b))
-            .map(|(index, _)| index)
-            .unwrap_or(0)
+            .map(|(index, _)| match index {
+                0 => Direction::Up,
+                1 => Direction::Down,
+                2 => Direction::Left,
+                3 => Direction::Right,
+                _ => panic!("Cannot convert {} to a direction", index),
+            })
+            .expect("Failed to read neural network output")
     }
 
     pub fn new() -> Snake {
