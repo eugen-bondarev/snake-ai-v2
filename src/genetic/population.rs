@@ -1,14 +1,12 @@
-use std::sync::{Arc, Mutex};
-
-use super::traits::{HasFitness, HasGenes, HasLife, HasTimePerception};
+use super::organism::Organism;
 
 use rayon::prelude::*;
 
 pub struct Population<T> {
     capacity: usize,
     genomes: Vec<T>,
-    pub alive_genomes_count: Arc<Mutex<usize>>,
-    pub max_fitness_current: Arc<Mutex<f32>>,
+    pub alive_genomes_count: usize,
+    pub max_fitness_current: f32,
 
     pub generation: usize,
     pub max_fitness_prev: f32,
@@ -23,15 +21,13 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
     let std_dev = (m - n) / 4;
     let normal = Normal::new(mean as f64, std_dev as f64).unwrap();
 
-    let mut rng = thread_rng();
-    let mut num;
-    loop {
-        num = normal.sample(&mut rng) as u32;
-        if num >= n && num <= m {
-            break;
-        }
-    }
+    let num = normal
+        .sample_iter(thread_rng())
+        .map(|x| x as u32)
+        .find(|sample| sample >= &n && sample <= &m)
+        .unwrap_or(0u32);
 
+    let mut rng = thread_rng();
     let rand_num = rng.gen_range(0.0..1.0);
     if rand_num <= small_likelihood {
         n + rng.gen_range(0..(num - n).max(1))
@@ -40,20 +36,17 @@ fn generate_random_number_tending_towards_smaller(n: u32, m: u32, small_likeliho
     }
 }
 
-impl<T> Population<T>
-where
-    T: Clone + Sync + Send + Default + HasLife + HasFitness + HasTimePerception + HasGenes<T>,
-{
+impl<T: Organism> Population<T> {
     pub fn new(capacity: usize) -> Self {
         let mut genomes: Vec<T> = Vec::with_capacity(capacity);
-        for _ in 0..capacity {
+        (0..capacity).for_each(|_| {
             genomes.push(Default::default());
-        }
+        });
         Population {
             genomes,
             capacity,
-            alive_genomes_count: Arc::new(Mutex::new(0)),
-            max_fitness_current: Arc::new(Mutex::new(0.0)),
+            alive_genomes_count: 0,
+            max_fitness_current: 0.0,
             mutation_rate: 0.01,
             generation: 0,
             max_fitness_prev: 0.0,
@@ -61,40 +54,64 @@ where
     }
 
     pub fn reborn(&mut self) {
-        for genome in &mut self.genomes {
+        self.genomes.iter_mut().for_each(|genome| {
             genome.reborn();
-        }
-    }
-
-    pub fn kill(&mut self) {
-        for genome in &mut self.genomes {
-            genome.kill();
-        }
-    }
-
-    pub fn tick(&mut self) {
-        self.max_fitness_current = Arc::new(Mutex::<f32>::new(0.0));
-        self.alive_genomes_count = Arc::new(Mutex::new(0));
-
-        let batch_size = self.genomes.len() / num_cpus::get();
-        let batches: Vec<_> = self.genomes.chunks_mut(batch_size).collect();
-
-        batches.into_par_iter().for_each(|batch| {
-            for item in batch {
-                if item.get_fitness() > *self.max_fitness_current.lock().unwrap() {
-                    *self.max_fitness_current.lock().unwrap() = item.get_fitness();
-                }
-                if !item.is_alive() {
-                    continue;
-                }
-                item.tick();
-                *self.alive_genomes_count.lock().unwrap() += 1;
-            }
         });
     }
 
+    pub fn kill(&mut self) {
+        self.genomes.iter_mut().for_each(|genome| {
+            genome.kill();
+        });
+    }
+
+    pub fn tick(&mut self) {
+        struct TickResult {
+            best_fitness: f32,
+            survivors: usize,
+        }
+
+        // Rayon parallel iter => nice
+        //
+        // I refactored it to use map so we dont need to use a mutex
+        //
+        // Removed batches as rayon handles it anyways. I think that sped up the process a bit, but did no real benchmarking
+        //
+        // Even without batching rayon creates only 20 threads on my computer, so I think we are fine
+        let tick_result = self
+            .genomes
+            .par_iter_mut()
+            .map(|organism| {
+                if !organism.is_alive() {
+                    return TickResult {
+                        best_fitness: 0.0,
+                        survivors: 0,
+                    };
+                }
+                organism.tick();
+                let organism_fitness = organism.get_fitness();
+                TickResult {
+                    best_fitness: organism_fitness,
+                    survivors: 1,
+                }
+            })
+            .reduce(
+                || TickResult {
+                    best_fitness: 0f32,
+                    survivors: 0,
+                },
+                |result, batch_result| TickResult {
+                    best_fitness: result.best_fitness.max(batch_result.best_fitness),
+                    survivors: result.survivors + batch_result.survivors,
+                },
+            );
+
+        self.max_fitness_current = tick_result.best_fitness;
+        self.alive_genomes_count = tick_result.survivors;
+    }
+
     pub fn is_dead(&self) -> bool {
-        *self.alive_genomes_count.lock().unwrap() == 0
+        self.alive_genomes_count == 0
     }
 
     pub fn evolution(&mut self) {
@@ -105,8 +122,8 @@ where
 
         let mut new_population: Vec<T> = vec![];
 
-        let progress = *self.max_fitness_current.lock().unwrap() > self.max_fitness_prev;
-        self.max_fitness_prev = *self.max_fitness_current.lock().unwrap();
+        let progress = self.max_fitness_current > self.max_fitness_prev;
+        self.max_fitness_prev = self.max_fitness_current;
 
         if progress {
             self.mutation_rate -= self.mutation_rate * 0.1;
@@ -115,7 +132,7 @@ where
         }
         self.mutation_rate = f64::clamp(self.mutation_rate, 0.00005 as f64, 0.05 as f64);
 
-        for _ in (0..self.get_capacity()).step_by(2) {
+        (0..self.get_capacity()).step_by(2).for_each(|_| {
             let parent_a = &slice[generate_random_number_tending_towards_smaller(
                 0,
                 slice.len() as u32 - 1,
@@ -126,13 +143,13 @@ where
                 slice.len() as u32 - 1,
                 0.9,
             ) as usize];
-            new_population.push(T::crossover(&parent_a, &parent_b, self.mutation_rate));
-        }
+            new_population.push(parent_a.crossover(&parent_b, self.mutation_rate));
+        });
 
         self.get_genomes().clear();
-        for snake in new_population {
+        new_population.into_iter().for_each(|snake| {
             self.get_genomes().push(snake);
-        }
+        });
 
         self.reborn();
         self.generation += 1;

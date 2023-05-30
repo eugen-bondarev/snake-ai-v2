@@ -1,171 +1,141 @@
-mod cell;
 mod direction;
+mod point;
 
-use std::collections::HashMap;
+use std::collections::VecDeque;
 
 use dfdx::prelude::Module;
 use dfdx::shapes::Rank1;
 use dfdx::tensor::{Cpu, Tensor, ZerosTensor};
-use lazy_static::lazy_static;
 
 pub use crate::genetic::genome::Genome;
-use crate::genetic::traits::{HasFitness, HasGenes, HasLife, HasSensors, HasTimePerception};
-pub use crate::snake::cell::{Point, FIELD_HEIGHT, FIELD_WIDTH};
+use crate::genetic::organism::Organism;
 pub use crate::snake::direction::Direction;
-
-use self::cell::Cell;
+pub use crate::snake::point::{Point, FIELD_HEIGHT, FIELD_WIDTH};
 
 #[derive(Clone, Default)]
 pub struct Snake {
     genome: Genome,
 
-    cells: Vec<Cell>,
-    apple: Cell,
+    cells: VecDeque<Point>,
+    apple: Point,
     direction: Direction,
     alive: bool,
     moves_made: i32,
 }
 
-impl HasFitness for Snake {
+impl Organism for Snake {
     fn get_fitness(&self) -> f32 {
         self.get_length() as f32
     }
-}
 
-impl HasSensors for Snake {
     fn get_sensors(&self) -> Vec<f32> {
         vec![
-            self.cells[0].current.1 as f32,
-            (FIELD_HEIGHT as f32 - self.cells[0].current.1 as f32),
-            self.cells[0].current.0 as f32,
-            (FIELD_WIDTH as f32 - self.cells[0].current.0 as f32),
-            (self.cells[0].current.0 - self.apple.current.0) as f32,
-            (self.cells[0].current.1 - self.apple.current.1) as f32,
+            self.cells[0].y as f32,
+            (FIELD_HEIGHT as f32 - self.cells[0].y as f32),
+            self.cells[0].x as f32,
+            (FIELD_WIDTH as f32 - self.cells[0].x as f32),
+            (self.cells[0].x - self.apple.x) as f32,
+            (self.cells[0].y - self.apple.y) as f32,
         ]
     }
-}
 
-impl HasLife for Snake {
     fn is_alive(&self) -> bool {
         self.alive
     }
 
     fn reborn(&mut self) {
-        self.cells = vec![Cell::init_random()];
+        self.cells = VecDeque::from([Point::default()]);
         self.direction = Direction::Up;
         self.alive = true;
-        self.apple = Cell::init_random();
+        self.apple = Point::default();
         self.moves_made = 0;
     }
 
     fn kill(&mut self) {
         self.moves_made = 100;
     }
-}
 
-impl HasTimePerception for Snake {
     fn tick(&mut self) {
-        lazy_static! {
-            static ref PREDICTION_DIRECTION_MAP: HashMap<usize, Direction> = vec![
-                (0, Direction::Up),
-                (1, Direction::Down),
-                (2, Direction::Left),
-                (3, Direction::Right),
-            ]
-            .into_iter()
-            .collect();
+        // I actually tried to refactor the for loop into an iterator, but with a Vec it requires a streaming/lending iterator I think.
+        // While I tried to use that I somehow changed the datastructure to a deque which turns out to not need the loop at all.
+        // If you are really motivated I can really recommend looking into rust iterators as they are quite powerful.
+        // Iterators also usually result in more efficient code than loops, because the compiler is better at optimizing them.
+        // The rust course at my university had some great workshop exercises on iterators, I will attach them to my email.
+
+        self.direction = self.predict_direction();
+        let new_head = self.cells[0] + self.direction.movement_vector();
+        self.cells.push_front(new_head);
+
+        if self.apple == self.cells[0] {
+            self.apple = Point::default();
+            self.moves_made = 0;
+        } else {
+            self.cells.pop_back();
         }
-
-        /*
-         * This seems kinda unsafe..
-         */
-        self.direction = PREDICTION_DIRECTION_MAP[&self.get_nn_prediction()];
-
-        lazy_static! {
-            static ref DIRECTION_MOVEMENT_MAP: HashMap<Direction, Point> = vec![
-                (Direction::Up, (0, -1)),
-                (Direction::Down, (0, 1)),
-                (Direction::Left, (-1, 0)),
-                (Direction::Right, (1, 0)),
-            ]
-            .into_iter()
-            .collect();
-        }
-        let matching_point = DIRECTION_MOVEMENT_MAP[&self.direction];
-
-        for i in 0..self.cells.len() {
-            self.cells[i].prev = self.cells[i].current;
-            if i > 0 {
-                self.cells[i].current = self.cells[i - 1].prev;
-            }
-        }
-
-        self.cells[0].add(&matching_point);
 
         self.alive = self.moves_made < 100
-            && self.cells[0].current.0 >= 0
-            && self.cells[0].current.0 < FIELD_WIDTH.into()
-            && self.cells[0].current.1 >= 0
-            && self.cells[0].current.1 < FIELD_HEIGHT.into();
-
-        if self.apple.current == self.cells[0].current {
-            self.cells.push(Cell {
-                current: self.cells[0].prev,
-                prev: (0, 0),
-            });
-            self.apple = Cell::init_random();
-            self.moves_made = 0;
-        }
+            && self.cells[0].x >= 0
+            && self.cells[0].x < FIELD_WIDTH.into()
+            && self.cells[0].y >= 0
+            && self.cells[0].y < FIELD_HEIGHT.into();
 
         self.moves_made += 1;
     }
-}
 
-impl HasGenes<Snake> for Snake {
-    fn crossover(a: &Snake, b: &Snake, mutation_rate: f64) -> Snake {
+    fn crossover(&self, b: &Snake, mutation_rate: f64) -> Snake {
         let mut child = Snake::new();
-        child.genome = Genome::crossover(&a.genome, &b.genome, mutation_rate);
+        child.genome = self.genome.crossover(&b.genome, mutation_rate);
         child
     }
 }
 
 impl Snake {
-    pub fn get_nn_prediction(&mut self) -> usize {
+    /// Use the neural network to predict the direction the snake should move in.
+    // This refactoring was purely because I like it more this way, it is not necessary.
+    // If this crate were a library one should definitly use Results instead of panicking.
+    pub fn predict_direction(&mut self) -> Direction {
         let input = self.get_sensors();
         let dev: Cpu = Default::default();
         let mut x: Tensor<Rank1<6>, f32, Cpu> = dev.zeros();
-        x.copy_from(&input[0..input.len()]);
-        match (self.genome.neural_network.forward(x).as_vec())
+        // Added as_slice and unwrap_or
+        x.copy_from(input.as_slice());
+        self.genome
+            .neural_network
+            .forward(x)
+            .as_vec()
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.total_cmp(b))
-            .map(|(index, _)| index)
-        {
-            Some(v) => v,
-            None => 0,
-        }
+            .map(|(index, _)| match index {
+                0 => Direction::Up,
+                1 => Direction::Down,
+                2 => Direction::Left,
+                3 => Direction::Right,
+                _ => panic!("Cannot convert {} to a direction", index),
+            })
+            .expect("Failed to read neural network output")
     }
 
     pub fn new() -> Snake {
         Snake {
             genome: Genome::new(),
-            cells: vec![Cell::init_random()],
-            apple: Cell::init_random(),
+            cells: VecDeque::from([Point::default()]),
+            apple: Point::default(),
             direction: Direction::Up,
             alive: true,
             moves_made: 0,
         }
     }
 
-    pub fn get_cells(&self) -> &Vec<Cell> {
+    pub fn get_cells(&self) -> &VecDeque<Point> {
         &self.cells
     }
 
-    pub fn get_apple(&self) -> &Cell {
+    pub fn get_apple(&self) -> &Point {
         &self.apple
     }
 
     pub fn get_length(&self) -> usize {
-        self.cells.len() - 1
+        self.cells.len()
     }
 }

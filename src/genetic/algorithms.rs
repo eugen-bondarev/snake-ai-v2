@@ -1,18 +1,23 @@
 use rand::{thread_rng, Rng};
 
+/// A trait with only associated functions is (more or less) just a namespace and should probably be a mod.
+/// Converted crossover to a method.
+///
+/// Defining it as a method allows us to call crossover on any Vec<f32> instance (if the trait is in scope).
 pub trait GeneticCrossover {
-    fn crossover(a: &Vec<f32>, b: &Vec<f32>, mutation_rate: f64) -> Vec<f32>;
+    fn crossover(&self, b: &Vec<f32>, mutation_rate: f64) -> Vec<f32>;
 }
 
 impl GeneticCrossover for Vec<f32> {
-    fn crossover(a: &Vec<f32>, b: &Vec<f32>, mutation_rate: f64) -> Vec<f32> {
+    fn crossover(&self, b: &Vec<f32>, mutation_rate: f64) -> Vec<f32> {
+        let a = self;
         let mut c: Vec<f32> = Vec::with_capacity(a.capacity());
         for i in 0..a.len() {
             let gene_mutation_occurred = thread_rng().gen_bool(mutation_rate);
             let x = if gene_mutation_occurred {
                 thread_rng().gen_range(-3.0..3.0)
             } else {
-                f32::crossover(a[i], b[i], u32::create_bit_mask(2))
+                a[i].crossover(b[i], u32::create_bit_mask(2))
             };
             c.push(x);
         }
@@ -21,18 +26,18 @@ impl GeneticCrossover for Vec<f32> {
 }
 
 pub trait NumericCrossover<T> {
-    fn crossover(a: T, b: T, mask: u32) -> T;
+    fn crossover(self, b: T, mask: u32) -> T;
 }
 
 impl NumericCrossover<u32> for u32 {
-    fn crossover(a: u32, b: u32, mask: u32) -> u32 {
-        (a & mask) | (b & !mask)
+    fn crossover(self, b: u32, mask: u32) -> u32 {
+        (self & mask) | (b & !mask)
     }
 }
 
 impl NumericCrossover<f32> for f32 {
-    fn crossover(a: f32, b: f32, mask: u32) -> f32 {
-        f32::from_bits(u32::crossover(a.to_bits(), b.to_bits(), mask))
+    fn crossover(self, b: f32, mask: u32) -> f32 {
+        f32::from_bits(u32::crossover(self.to_bits(), b.to_bits(), mask))
     }
 }
 

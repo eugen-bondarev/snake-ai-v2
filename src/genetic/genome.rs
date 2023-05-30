@@ -36,8 +36,11 @@ impl Genome {
 
     /**
      * I hate this code.
+     *
+     * Converted associated function to method. A method can still be called like a associated function, but also like a method
      */
-    pub fn crossover(a: &Genome, b: &Genome, mutation_rate: f64) -> Genome {
+    pub fn crossover(&self, b: &Genome, mutation_rate: f64) -> Genome {
+        let a = self;
         let dev: Cpu = Default::default();
         let mut child_neural_network = dev.build_module::<Model, f32>();
 
